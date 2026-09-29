@@ -38,7 +38,11 @@ export class PlayerNameplate {
     if (name === this.text && premium === this.premium) return;
     this.text = name;
     this.premium = premium;
-    const context = this.texture.getContext();
+    // This web renderer uses a browser 2D canvas. Babylon's portable
+    // ICanvasRenderingContext omits textAlign even though both browser contexts support it.
+    const context = this.texture.getContext() as
+      | CanvasRenderingContext2D
+      | OffscreenCanvasRenderingContext2D;
     context.clearRect(0, 0, 512, 96);
     context.fillStyle = 'rgba(15, 23, 42, 0.2)';
     context.fillRect(0, 0, 512, 96);

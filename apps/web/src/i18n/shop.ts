@@ -1,4 +1,5 @@
 export const shopVi = {
+  "shop.loginFoot": "Đăng nhập bằng Google để lưu hồ sơ và tiến trình chơi của bạn.",
   "shop.title": "Cửa hàng",
   "shop.frames": "Khung avatar",
   "shop.skins": "Trang phục",
@@ -39,6 +40,7 @@ export const shopVi = {
 } as const;
 
 export const shopEn: Record<keyof typeof shopVi, string> = {
+  "shop.loginFoot": "Sign in with Google to save your profile and game progress.",
   "shop.title": "Shop",
   "shop.frames": "Avatar frames",
   "shop.skins": "Character skins",

@@ -1,4 +1,6 @@
 export const socialVi = {
+  "social.role.sponsor_platinum": "Nhà tài trợ Bạch kim",
+  "social.role.sponsor_diamond": "Nhà tài trợ Kim cương",
   "social.role.student": "Học sinh / Sinh viên",
   "social.role.sponsor_bronze": "Nhà tài trợ Đồng",
   "social.role.sponsor_silver": "Nhà tài trợ Bạc",
@@ -32,6 +34,8 @@ export const socialVi = {
 } as const;
 
 export const socialEn: Record<keyof typeof socialVi, string> = {
+  "social.role.sponsor_platinum": "Platinum sponsor",
+  "social.role.sponsor_diamond": "Diamond sponsor",
   "social.role.student": "Student",
   "social.role.sponsor_bronze": "Bronze sponsor",
   "social.role.sponsor_silver": "Silver sponsor",

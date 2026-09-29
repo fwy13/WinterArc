@@ -5,7 +5,6 @@ import { useStore } from '../hooks/useStore';
 import { field, secondary } from '../components/ui';
 import { account, api, presentProfile } from './service';
 import ProfileName from './ProfileName';
-import AvatarPhoto from './AvatarPhoto';
 
 export default function ProfileEditor({
   inRoom,
