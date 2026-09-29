@@ -1,0 +1,41 @@
+{
+  "name": "winter_arc",
+  "version": "6.0.0",
+  "description": "Winter Cup: a multi-round Christmas knockout tournament.",
+  "author": "fwy13",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace=apps/server",
+    "dev:client": "npm run dev --workspace=apps/web",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build": "npm run build --workspace=apps/server && npm run build --workspace=apps/web",
+    "start": "npm run start --workspace=apps/server",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "map:install": "tsx scripts/install-editor-map.ts",
+    "dev:editor": "npm run dev --workspace=apps/editor",
+    "build:editor": "npm run build --workspace=apps/editor",
+    "preview:editor": "npm run preview --workspace=apps/editor",
+    "build:all": "npm run build && npm run build:editor"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0",
+    "prettier": "3.6.2",
+    "tsx": "^4.19.2"
+  },
+  "overrides": {
+    "@babylonjs/core": "^8.13.0"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "winterarc-core": "*"
+  }
+}

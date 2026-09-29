@@ -1,0 +1,20 @@
+{
+  "name": "winterarc-rendering",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "import": "./index.ts",
+      "default": "./index.ts"
+    }
+  },
+  "dependencies": {
+    "@babylonjs/core": "^8.13.0",
+    "@babylonjs/loaders": "^8.13.0",
+    "winterarc-world": "*",
+    "winterarc-core": "*"
+  }
+}

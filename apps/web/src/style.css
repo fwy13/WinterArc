@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Snowburst+One&display=swap');
+@import 'tailwindcss';
+@theme {
+  --font-note: 'Patrick Hand', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Noto Sans', cursive;
+  --color-paper: #fff8e8;
+  --color-paper-light: #fffdf4;
+  --color-paper-dark: #e9dec2;
+  --color-ink: #303b38;
+  --color-fir: #315943;
+  --color-berry: #a83e40;
+  --font-sans: 'Segoe UI', 'Noto Sans', system-ui, sans-serif;
+  --color-winter-950: #071d26;
+  --color-winter-900: #103440;
+  --color-mint: #bde8d1;
+}
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    margin: 0;
+    background: #fff8e8;
+    color: #303b38;
+  }
+}
+.font-snowburst-one-regular {
+  font-family: 'Snowburst One', system-ui;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Tailwind v4 utilities: reusable paper surfaces without a runtime theme layer. */
+@utility paper-sheet {
+  position: relative;
+  color: var(--color-ink);
+  background-color: var(--color-paper);
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0 27px,
+    rgb(75 82 63 / 0.045) 27px 28px
+  );
+  border: 1.5px solid var(--color-ink);
+  border-radius: 2px 5px 3px 2px;
+  box-shadow:
+    5px 6px 0 #55716b,
+    6px 7px 0 var(--color-ink);
+}
+@utility paper-tab {
+  color: var(--color-ink);
+  background-color: var(--color-paper);
+  border: 1.5px solid var(--color-ink);
+  border-radius: 2px;
+  box-shadow: 3px 3px 0 #55716b;
+}
+@utility paper-tape {
+  &::before {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    top: -9px;
+    left: 25px;
+    width: 60px;
+    height: 18px;
+    background: repeating-linear-gradient(135deg, #a83e40b3 0 7px, #fff8e8cc 7px 14px);
+    border: 1px solid #303b3826;
+    transform: rotate(-4deg);
+  }
+}
+
+
+@keyframes damage-flash {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes hit-marker {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(0.65); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "winterarc-world",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "import": "./index.ts",
+      "default": "./index.ts"
+    }
+  },
+  "dependencies": {
+    "winterarc-core": "*"
+  },
+  "keywords": [
+    "voxel-world"
+  ],
+  "author": "Fwy13",
+  "license": "MIT",
+  "private": true
+}

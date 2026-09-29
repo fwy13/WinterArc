@@ -1,0 +1,9 @@
+Frost Crab, Christmas Pine and the pixel textures are original procedural
+assets from the earlier Snowbound / Winter Arc project, distributed under
+the project's MIT license. No Mojang/Minecraft textures are included.
+
+The supplied Repomix XML omits binary assets. This ZIP restores the default
+PNG/GLB files from the earlier project. Replace them with your newer custom
+assets if you changed the binary files since that version.
+
+Replacement assets retain their own licensing and attribution requirements.

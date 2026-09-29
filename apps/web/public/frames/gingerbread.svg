@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+<defs><mask id="ring"><rect x="5" y="5" width="90" height="90" rx="24" fill="white"/><rect x="15" y="15" width="70" height="70" rx="20" fill="black"/></mask></defs>
+<rect x="5" y="5" width="90" height="90" rx="24" fill="#9c5d35" mask="url(#ring)"/>
+<rect x="8" y="8" width="84" height="84" rx="22" fill="none" stroke="#f5c486" stroke-width="3"/>
+<rect x="14" y="14" width="72" height="72" rx="20" fill="none" stroke="#f5c486" stroke-width="2"/>
+<g ><path d="M13 29V14H29M71 14H86V29M86 71V86H71M29 86H14V71" fill="none" stroke="#fff0d5" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="9" r="4" fill="#bb3550"/><circle cx="50" cy="91" r="4" fill="#39886c"/></g>
+</svg>

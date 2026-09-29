@@ -1,0 +1,7 @@
+node_modules
+dist
+*.glb
+*.png
+*.jpg
+*.zip
+package-lock.json

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+.DS_Store
+
+# Persistent account database (back up separately)
+**/data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# Deployment secrets and offline SQLite backups
+deploy/certs/
+backups/

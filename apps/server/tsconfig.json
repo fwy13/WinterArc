@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "rootDir": "../..",
+    "noEmit": true,
+    "types": ["node"],
+    "useDefineForClassFields": false
+  },
+  "include": ["src/**/*.ts"]
+}

@@ -1,0 +1,717 @@
+import type { SkyQuality } from 'winterarc-core';
+import { useEffect, useRef, useState } from 'react';
+import { PALETTE, type MapDocument } from 'winterarc-world';
+import type { GameId } from 'winterarc-core';
+import { useI18n } from '../i18n';
+import { primary, secondary, field } from '../components/ui';
+import { EditorDocument, type Cell, type MarkerKind } from './EditorDocument';
+import { EditorViewport, type ViewMode } from './EditorViewport';
+import { download, readDraft, writeDraft } from './drafts';
+import { editorVi, editorEn, type EditorMessage } from './messages';
+
+// Keep saved block IDs compatible; show one palette item for each shape.
+const ROTATION_GROUPS: readonly (readonly number[])[] = [
+  [24, 25, 26, 27], // Wooden stairs: +Z, -X, -Z, +X.
+  [29, 30, 31, 32], // Wall torches: +Z, -X, -Z, +X.
+];
+
+function getRotationGroup(id: number): readonly number[] | undefined {
+  return ROTATION_GROUPS.find(group => group.includes(id));
+}
+
+function getPaletteId(id: number): number {
+  return getRotationGroup(id)?.[0] ?? id;
+}
+
+const PALETTE_ITEMS = Object.entries(PALETTE).filter(
+  ([id]) => getPaletteId(Number(id)) === Number(id),
+);
+
+function getBlockName(id: number, locale: string): string {
+  const paletteId = getPaletteId(id);
+  if (paletteId === 24) return locale === 'vi' ? 'Bậc thang gỗ' : 'Wooden stairs';
+  if (paletteId === 29) return locale === 'vi' ? 'Đuốc gắn tường' : 'Wall torch';
+  return PALETTE[id][0];
+}
+
+const modes: GameId[] = ['hunt', 'giftrace', 'crab', 'icebreak', 'colorfall'];
+const kinds: MarkerKind[] = ['spawn', 'target', 'checkpoint', 'finish', 'tree', 'lamp', 'obstacle'];
+type Tool = 'block' | 'erase' | 'select' | 'marker';
+
+function Coordinates({
+  title,
+  value,
+  onChange,
+}: {
+  title: string;
+  value: Cell;
+  onChange(value: Cell): void;
+}) {
+  return (
+    <fieldset className="space-y-1">
+      <legend className="text-xs font-bold">{title}</legend>
+      <div className="grid grid-cols-3 gap-1">
+        {value.map((n, i) => (
+          <label key={i} className="text-xs">
+            {'XYZ'[i]}
+            <input
+              aria-label={`${title} ${'XYZ'[i]}`}
+              type="number"
+              step="1"
+              value={n}
+              className={`${field} min-w-0 px-2 py-1.5`}
+              onChange={(event) => {
+                const next = [...value] as Cell;
+                next[i] = Number(event.target.value);
+                onChange(next);
+              }}
+            />
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/** Public local authoring tool. Publishing still requires source access and deployment. */
+export default function EditorPage() {
+  const [skyQuality, setSkyQuality] = useState<SkyQuality>(() => {
+    try {
+      const value = localStorage.getItem('winterarc-editor-sky');
+      return value === 'off' || value === 'low' || value === 'high' ? value : 'auto';
+    } catch { return 'auto'; }
+  });
+  const { locale, setLocale } = useI18n();
+  const text = locale === 'vi' ? editorVi : editorEn;
+  const tr = (key: EditorMessage) => text[key];
+  const [model, setModel] = useState(() => new EditorDocument());
+  const [revision, setRevision] = useState(0),
+    [saved, setSaved] = useState(0);
+  const [mode, setMode] = useState<GameId>('hunt'),
+    [viewMode, setViewMode] = useState<ViewMode>('orbit');
+  const [tool, setTool] = useState<Tool>('block'),
+    [block, setBlock] = useState(1);
+  const rotationGroup = getRotationGroup(block);
+  const rotationY = rotationGroup ? rotationGroup.indexOf(block) * 90 : 0;
+  const selectedPaletteId = getPaletteId(block);
+  const selectedBlockName = getBlockName(block, locale);
+  const [a, setA] = useState<Cell>([0, 2, 0]),
+    [b, setB] = useState<Cell>([0, 2, 0]);
+  const [at, setAt] = useState<Cell>([0, 3, 0]),
+    [source, setSource] = useState(1);
+  const [turns, setTurns] = useState(0),
+    [air, setAir] = useState(false);
+  const [kind, setKind] = useState<MarkerKind>('spawn'),
+    [size, setSize] = useState(1);
+  const [message, setMessage] = useState(''),
+    [fatal, setFatal] = useState('');
+  const canvas = useRef<HTMLCanvasElement>(null),
+    viewport = useRef<EditorViewport>();
+  const importInput = useRef<HTMLInputElement>(null),
+    selectNext = useRef(false);
+  const current = useRef(model);
+  current.current = model;
+  const strings = useRef(text);
+  strings.current = text;
+  const savedRef = useRef(0);
+  savedRef.current = saved;
+  const pick = useRef<(hit: Cell, place: Cell, remove: boolean) => void>(() => {});
+  const report = (error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    const key = message.replace('editor.', '') as EditorMessage;
+    setMessage(
+      `${strings.current.error}: ${key in strings.current ? strings.current[key] : message}`,
+    );
+  };
+  const act = (action: () => void) => {
+    try {
+      action();
+    } catch (error) {
+      report(error);
+    }
+  };
+  const editable = viewMode !== 'play';
+  pick.current = (hit, place, remove) =>
+    act(() => {
+      if (!editable) return;
+      setAt(place);
+      if (remove || tool === 'erase') model.edit([[...hit, 0]]);
+      else if (tool === 'block') model.edit([[...place, block]]);
+      else if (tool === 'select') {
+        if (!selectNext.current) {
+          setA(hit);
+          setB(hit);
+        } else setB(hit);
+        selectNext.current = !selectNext.current;
+      } else model.marker(kind, { x: place[0] + 0.5, y: place[1], z: place[2] + 0.5 }, size);
+    });
+
+  useEffect(() => {
+    let renderer: EditorViewport;
+    try {
+      renderer = new EditorViewport(canvas.current!, skyQuality);
+      viewport.current = renderer;
+      renderer.onPick = (...args) => pick.current(...args);
+      renderer.onMode = setViewMode;
+    } catch (error) {
+      setFatal(String(error));
+      return;
+    }
+    return () => {
+      renderer.dispose();
+      viewport.current = undefined;
+    };
+  }, []);
+  useEffect(() => {
+    viewport.current?.setSkyQuality(skyQuality);
+    try { localStorage.setItem('winterarc-editor-sky', skyQuality); } catch { /* Optional cache. */ }
+  }, [skyQuality]);
+  useEffect(() => {
+    viewport.current?.setDocument(model);
+    model.onChange = (cells) => {
+      viewport.current?.update(cells);
+      setRevision(model.revision);
+    };
+    return () => {
+      model.onChange = () => {};
+    };
+  }, [model]);
+  useEffect(() => {
+    viewport.current?.select(a, b);
+  }, [a, b, viewMode]);
+  useEffect(() => {
+    const handler = (event: BeforeUnloadEvent) => {
+      if (current.current.revision !== savedRef.current) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('input,select,textarea,button') || viewMode === 'play') return;
+      if ((event.ctrlKey || event.metaKey) && event.code === 'KeyZ') {
+        event.preventDefault();
+        event.shiftKey ? model.redo() : model.undo();
+      }
+      if ((event.ctrlKey || event.metaKey) && event.code === 'KeyY') {
+        event.preventDefault();
+        model.redo();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [model, viewMode]);
+  const save = async () => {
+    const owner = current.current,
+      version = owner.revision;
+    try {
+      setMessage(strings.current.saving);
+      await writeDraft({ document: owner.export(false), savedAt: Date.now() });
+      if (current.current === owner) {
+        setSaved(version);
+        setMessage(strings.current.saved);
+      }
+    } catch (error) {
+      report(error);
+    }
+  };
+  useEffect(() => {
+    if (revision === saved || revision === 0) return;
+    const timer = setTimeout(() => {
+      void save();
+    }, 1800);
+    return () => clearTimeout(timer);
+    // The timeout captures the current document; revision changes cancel older schedules.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [model, revision]);
+  const replaceDocument = (next: EditorDocument) => {
+    setModel(next);
+    setMode(next.meta.mode);
+    setRevision(0);
+    setSaved(0);
+    setMessage('');
+    selectNext.current = false;
+    setA([0, 2, 0]);
+    setB([0, 2, 0]);
+  };
+  const confirmReplace = () => window.confirm(tr('confirm'));
+  const loadDraft = async () => {
+    if (!confirmReplace()) return;
+    try {
+      const draft = await readDraft();
+      if (!draft) setMessage(tr('noDraft'));
+      else replaceDocument(EditorDocument.import(draft.document, true));
+    } catch (error) {
+      report(error);
+    }
+  };
+  const loadFile = async (file?: File) => {
+    if (!file) return;
+    try {
+      if (!file.name.toLowerCase().endsWith('.json') || file.size > 32 * 1024 * 1024)
+        throw new Error('editor.unsupportedFile');
+      const next = EditorDocument.import(JSON.parse(await file.text()) as MapDocument, true);
+      if (confirmReplace()) replaceDocument(next);
+    } catch (error) {
+      report(error);
+    }
+  };
+  const exportMap = (ts: boolean) =>
+    act(() => {
+      const doc = model.export(),
+        json = JSON.stringify(doc);
+      const name = doc.name.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 70) || 'map';
+      download(
+        `${name}.${ts ? 'ts' : 'map.json'}`,
+        ts
+          ? `import type { MapDocument } from 'winterarc-world';\n\nexport default ${json} satisfies MapDocument;\n`
+          : json + '\n',
+        ts ? 'text/plain' : 'application/json',
+      );
+      setMessage(tr('valid'));
+    });
+  const changeMetadata = (key: 'name' | 'loseY', value: string | number) =>
+    act(() =>
+      model.edit([], (meta) => {
+        Object.assign(meta, { [key]: value });
+      }),
+    );
+  const objects: { kind: MarkerKind; index: number; p: Cell }[] = [
+    ...model.meta.spawns.map((p, index) => ({
+      kind: 'spawn' as const,
+      index,
+      p: [p.x, p.y, p.z] as Cell,
+    })),
+    ...model.meta.targets.map((p, index) => ({
+      kind: 'target' as const,
+      index,
+      p: [p.x, p.y, p.z] as Cell,
+    })),
+    ...model.meta.checkpoints.map((p, index) => ({
+      kind: 'checkpoint' as const,
+      index,
+      p: [p.x, p.y, p.z] as Cell,
+    })),
+    ...(model.meta.finish
+      ? [
+          {
+            kind: 'finish' as const,
+            index: 0,
+            p: [model.meta.finish.x, model.meta.finish.y, model.meta.finish.z] as Cell,
+          },
+        ]
+      : []),
+    ...(model.meta.trees ?? []).map((p, index) => ({
+      kind: 'tree' as const,
+      index,
+      p: [p.x, p.y, p.z] as Cell,
+    })),
+    ...(model.meta.lamps ?? []).map((p, index) => ({ kind: 'lamp' as const, index, p })),
+    ...(model.meta.obstacles ?? []).map((p, index) => ({
+      kind: 'obstacle' as const,
+      index,
+      p: [p.x, p.y, p.z] as Cell,
+    })),
+  ];
+  const button = `${secondary} px-2 py-1.5 text-xs`;
+  return (
+    <main className="flex h-dvh flex-col overflow-hidden bg-paper text-ink">
+      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-ink/20 px-3 py-2">
+        <h1 className="mr-auto font-note text-2xl font-bold">❄ {tr('title')}</h1>
+        <label className="flex items-center gap-2 text-xs">
+          {locale === 'vi' ? 'Cực quang' : 'Aurora'}
+          <select className={button} value={skyQuality} onChange={event => setSkyQuality(event.target.value as SkyQuality)}>
+            <option value="auto">{locale === 'vi' ? 'Tự động' : 'Auto'}</option>
+            <option value="off">{locale === 'vi' ? 'Tắt' : 'Off'}</option>
+            <option value="low">{locale === 'vi' ? 'Tĩnh' : 'Static'}</option>
+            <option value="high">{locale === 'vi' ? 'Chuyển động' : 'Animated'}</option>
+          </select>
+        </label>
+        <a className={button} href={import.meta.env.VITE_GAME_URL || (import.meta.env.DEV ? `${location.protocol}//${location.hostname}:5173/` : "/")}>
+          {tr('home')}
+        </a>
+        <select
+          aria-label="Language"
+          value={locale}
+          onChange={(e) => setLocale(e.target.value as 'vi' | 'en')}
+          className={button}
+        >
+          <option value="vi">VI</option>
+          <option value="en">EN</option>
+        </select>
+        <button
+          className={button}
+          onClick={() => {
+            void save();
+          }}
+        >
+          {tr('save')}
+        </button>
+        <button
+          className={button}
+          onClick={() => {
+            void loadDraft();
+          }}
+        >
+          {tr('restore')}
+        </button>
+        <button className={button} onClick={() => importInput.current?.click()}>
+          {tr('import')}
+        </button>
+        <input
+          ref={importInput}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={(e) => {
+            void loadFile(e.target.files?.[0]);
+            e.target.value = '';
+          }}
+        />
+        <button className={button} onClick={() => exportMap(false)}>
+          {tr('export')}
+        </button>
+        <button className={button} onClick={() => exportMap(true)}>
+          {tr('exportTs')}
+        </button>
+      </header>
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        <aside className="flex max-h-[30dvh] shrink-0 flex-col gap-3 overflow-y-auto border-r border-ink/20 p-3 lg:max-h-none lg:w-56">
+          <label className="text-xs">
+            {tr('name')}
+            <input
+              className={field}
+              maxLength={120}
+              value={model.meta.name}
+              disabled={!editable}
+              onChange={(e) => changeMetadata('name', e.target.value)}
+            />
+          </label>
+          <label className="text-xs">
+            {tr('mode')}
+            <select
+              className={field}
+              value={mode}
+              onChange={(e) => setMode(e.target.value as GameId)}
+            >
+              {modes.map((id) => (
+                <option key={id}>{id}</option>
+              ))}
+            </select>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className={button}
+              onClick={() => {
+                if (confirmReplace()) act(() => replaceDocument(new EditorDocument(mode)));
+              }}
+            >
+              {tr('newMap')}
+            </button>
+            <button
+              className={button}
+              disabled={!['hunt', 'giftrace'].includes(mode)}
+              onClick={() => {
+                if (confirmReplace()) act(() => replaceDocument(new EditorDocument(mode, true)));
+              }}
+            >
+              {tr('blank')}
+            </button>
+          </div>
+          <fieldset disabled={!editable} className="space-y-2">
+            <legend className="font-bold">{tr('tools')}</legend>
+            <select
+              className={field}
+              aria-label={tr('tools')}
+              value={tool}
+              onChange={(e) => setTool(e.target.value as Tool)}
+            >
+              {(['block', 'erase', 'select', 'marker'] as Tool[]).map((id) => (
+                <option key={id} value={id}>
+                  {tr(id)}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs font-bold">{tr('palette')}</p>
+            <div className="grid grid-cols-4 gap-1">
+            {PALETTE_ITEMS.map(([id, [, color]]) => {
+              const paletteId = Number(id);
+              const name = getBlockName(paletteId, locale);
+              const selected = selectedPaletteId === paletteId;
+              return (
+                <button
+                  key={id}
+                  title={`${id}: ${name}`}
+                  aria-label={`${id}: ${name}`}
+                  aria-pressed={selected}
+                  onClick={() => setBlock(current =>
+                    getPaletteId(current) === paletteId ? current : paletteId,
+                  )}
+                  className={`min-h-10 rounded border-2 p-1 text-xs ${selected ? 'border-berry ring-2 ring-berry' : 'border-ink/30'}`}
+                  style={{ backgroundColor: color, color: '#101820', textShadow: '0 0 3px white' }}
+                >
+                  {id}
+                </button>
+              );
+            })}
+          </div>
+          </fieldset>
+          <p className="text-xs">{selectedBlockName}</p>
+          
+          <label className="text-xs">
+            {tr('loseY')}
+            <input
+              type="number"
+              step="0.1"
+              min="0.2"
+              max="45.9"
+              className={field}
+              value={model.meta.loseY}
+              disabled={!editable || model.meta.placement === 'overlay'}
+              onChange={(e) => changeMetadata('loseY', Number(e.target.value))}
+            />
+          </label>
+          {model.meta.placement === 'overlay' && (
+            <p className="text-xs leading-5 text-berry">{tr('overlay')}</p>
+          )}
+        </aside>
+        <section className="relative min-h-[35dvh] min-w-0 flex-1 bg-[#20363d]">
+          <canvas
+            ref={canvas}
+            className="block h-full w-full touch-none outline-none"
+            tabIndex={0}
+            aria-label={tr('title')}
+          />
+          <div className="absolute left-2 top-2 flex flex-wrap gap-2">
+            {(['orbit', 'fly', 'play'] as ViewMode[]).map((id) => (
+              <button
+                key={id}
+                className={`${button} ${viewMode === id ? 'ring-2 ring-berry' : ''}`}
+                onClick={() =>
+                  act(() => {
+                    viewport.current?.setMode(id);
+                  })
+                }
+              >
+                {tr(id)}
+              </button>
+            ))}
+          </div>
+          {viewMode !== 'orbit' && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl text-white"
+            >
+              +
+            </span>
+          )}
+          <p className="pointer-events-none absolute inset-x-2 bottom-2 rounded bg-black/60 p-2 text-[11px] leading-5 text-white">
+            {tr('hint')}
+          </p>
+          {fatal && (
+            <p role="alert" className="absolute inset-0 bg-paper p-8">
+              {fatal}
+            </p>
+          )}
+        </section>
+        <aside className="max-h-[35dvh] shrink-0 space-y-3 overflow-y-auto border-l border-ink/20 p-3 lg:max-h-none lg:w-72">
+          <div className="flex gap-2">
+            <button
+              className={button}
+              disabled={!editable || !model.canUndo}
+              onClick={() => model.undo()}
+            >
+              {tr('undo')}
+            </button>
+            <button
+              className={button}
+              disabled={!editable || !model.canRedo}
+              onClick={() => model.redo()}
+            >
+              {tr('redo')}
+            </button>
+          </div>
+          <fieldset disabled={!editable} className="space-y-2">
+          <legend className="font-bold">
+            {locale === 'vi' ? 'Thuộc tính block' : 'Block properties'}
+          </legend>
+          <p className="text-xs">{selectedBlockName}</p>
+          <label className="block text-xs">
+            {locale === 'vi' ? 'Góc xoay trục Y' : 'Y-axis rotation'}
+            <select
+              className={field}
+              value={rotationY}
+              disabled={!editable || !rotationGroup}
+              onChange={event => {
+                const next = rotationGroup?.[Number(event.target.value) / 90];
+                if (next !== undefined) setBlock(next);
+              }}
+            >
+              {[0, 90, 180, 270].map(angle => (
+                <option key={angle} value={angle}>{angle}°</option>
+              ))}
+            </select>
+          </label>
+          <p className="text-xs leading-5 text-ink/60">
+            {rotationGroup
+              ? (locale === 'vi'
+                ? 'Áp dụng cho block đặt, tô hoặc thay thế tiếp theo. Block đã đặt giữ nguyên hướng.'
+                : 'Applies to subsequent placement, fill, or replacement. Existing blocks keep their orientation.')
+              : (locale === 'vi'
+                ? 'Block này không có biến thể xoay.'
+                : 'This block has no rotation variants.')}
+          </p>
+        </fieldset>
+        <fieldset disabled={!editable} className="space-y-3">
+            <legend className="font-bold">{tr('selection')}</legend>
+            <p className="text-xs leading-5">{tr('selectHint')}</p>
+            <Coordinates title={tr('from')} value={a} onChange={setA} />
+            <Coordinates title={tr('to')} value={b} onChange={setB} />
+            <div className="flex flex-wrap gap-2">
+              <button className={button} onClick={() => act(() => model.fill(a, b, block))}>
+                {tr('fill')}
+              </button>
+              <button className={button} onClick={() => act(() => model.fill(a, b, 0))}>
+                {tr('clear')}
+              </button>
+              <button
+                className={button}
+                onClick={() =>
+                  act(() => {
+                    model.copy(a, b);
+                    setMessage(tr('copy'));
+                  })
+                }
+              >
+                {tr('copy')}
+              </button>
+            </div>
+            <label className="text-xs">
+              {tr('source')}
+              <input
+                className={field}
+                type="number"
+                min="0"
+                max="32"
+                value={source}
+                onChange={(e) => setSource(Number(e.target.value))}
+              />
+            </label>
+            <button className={button} onClick={() => act(() => model.fill(a, b, block, source))}>
+              {tr('replace')}
+            </button>
+            <Coordinates title={tr('destination')} value={at} onChange={setAt} />
+            <label className="text-xs">
+              {tr('rotation')}
+              <select
+                className={field}
+                value={turns}
+                onChange={(e) => setTurns(Number(e.target.value))}
+              >
+                {[0, 1, 2, 3].map((n) => (
+                  <option value={n} key={n}>
+                    {n * 90}°
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex gap-2 text-xs">
+              <input type="checkbox" checked={air} onChange={(e) => setAir(e.target.checked)} />
+              {tr('air')}
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button className={button} onClick={() => act(() => model.paste(at, turns, air))}>
+                {tr('paste')}
+              </button>
+              <button className={button} onClick={() => act(() => model.move(a, b, at))}>
+                {tr('move')}
+              </button>
+              <button className={button} onClick={() => viewport.current?.focus(at)}>
+                {tr('focus')}
+              </button>
+            </div>
+            <h2 className="font-bold">{tr('objects')}</h2>
+            <select
+              className={field}
+              aria-label={tr('objects')}
+              value={kind}
+              onChange={(e) => setKind(e.target.value as MarkerKind)}
+            >
+              {kinds.map((id) => (
+                <option key={id} value={id}>
+                  {tr(id)}
+                </option>
+              ))}
+            </select>
+            <label className="text-xs">
+              {tr('size')}
+              <input
+                className={field}
+                type="number"
+                step="0.25"
+                min="0.25"
+                max="12"
+                value={size}
+                onChange={(e) => setSize(Number(e.target.value))}
+              />
+            </label>
+            <button
+              className={button}
+              onClick={() => act(() => model.marker(kind, { x: at[0], y: at[1], z: at[2] }, size))}
+            >
+              {tr('add')}
+            </button>
+            <div className="max-h-60 space-y-1 overflow-y-auto">
+              {objects.map((item) => (
+                <div
+                  key={`${item.kind}-${item.index}`}
+                  className="flex items-center gap-1 border-b border-ink/10 py-1 text-xs"
+                >
+                  <button
+                    className="min-w-0 flex-1 text-left"
+                    onClick={() => {
+                      setAt(item.p);
+                      viewport.current?.focus(item.p);
+                    }}
+                  >
+                    {tr(item.kind)} {item.index + 1}
+                    <br />
+                    {item.p.join(', ')}
+                  </button>
+                  <button
+                    className="min-h-9 px-2 text-berry"
+                    onClick={() => act(() => model.removeMarker(item.kind, item.index))}
+                  >
+                    {tr('remove')}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </fieldset>
+          <button
+            className={`${primary} w-full px-2`}
+            onClick={() =>
+              act(() => {
+                model.export();
+                setMessage(tr('valid'));
+              })
+            }
+          >
+            {tr('validate')}
+          </button>
+          <p className="text-[11px] text-ink/60">{tr('history')}</p>
+        </aside>
+      </div>
+      <footer className="shrink-0 border-t border-ink/20 px-3 py-2 text-xs">
+        <p role="status" className="break-words">
+          {message || (saved !== revision ? tr('unsaved') : tr('local'))}
+        </p>
+        <p className="mt-1 text-ink/60 lg:hidden">{tr('mobile')}</p>
+      </footer>
+    </main>
+  );
+}

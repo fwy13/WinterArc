@@ -1,0 +1,14 @@
+.git
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+**/data
+**/*.sqlite*
+deploy/certs
+backups
+*.patch
+repomix-output*
+apps/web
+apps/editor
