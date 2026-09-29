@@ -15,7 +15,7 @@ export function zoneHits(zone: DangerZone, p: Position): boolean {
 }
 export function aimSnowball(
   p: Motion,
-  boss: Pick<'x' | 'y' | 'z'>,
+  boss: Position,
   world: VoxelWorld,
 ): { from: Vec3; to: Vec3; hit: boolean } {
   const from: Vec3 = [p.x, p.y + EYE_HEIGHT, p.z],

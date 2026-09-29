@@ -4,6 +4,7 @@ import { socialEn } from './social';
 import { accountEn } from './account';
 import { vi, type TranslationKey } from './vi';
 export const en: Record<TranslationKey, string> = {
+  ...vi, // Fallback first; English translations below take precedence.
   'room.random': 'Random each match',
   'room.randomHint': 'The server draws a mode when the match starts, avoiding the last played mode. Turn off to choose manually.',
   'settings.skyQuality': 'Aurora sky',
@@ -12,7 +13,6 @@ export const en: Record<TranslationKey, string> = {
   'settings.sky.low': 'Static · low',
   'settings.sky.high': 'Animated',
 
-  ...vi, // Fallback for untranslated legacy keys.
   ...accountEn,
   ...socialEn,
   ...adminEn,

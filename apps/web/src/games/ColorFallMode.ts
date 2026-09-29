@@ -64,7 +64,9 @@ export class ColorFallMode implements GameMode {
     const key = `${label}:${seconds}:${title}`;
     if (this.textKey === key) return;
     this.textKey = key;
-    const canvas = this.texture.getContext();
+    const canvas = this.texture.getContext() as
+      | CanvasRenderingContext2D
+      | OffscreenCanvasRenderingContext2D;
     canvas.fillStyle = '#0b1d29';
     canvas.fillRect(0, 0, 1024, 512);
     canvas.fillStyle = PALETTE[f.safeBlock][1];
