@@ -86,8 +86,8 @@ export async function startServer(port = Number(process.env.PORT || 2567)): Prom
       res.json(
         rooms.filter(room => room.metadata?.modeSelection === 'random' || accounts().enabledModes().includes(room.metadata?.mode ?? 'hunt')).slice(0, 100).map((room) => ({
           roomId: room.roomId,
-          clients: ['wallduel','battleship'].includes(room.metadata?.modeSelection) ? room.metadata?.duelPlayers ?? 0 : room.clients,
-          maxClients: ['wallduel','battleship'].includes(room.metadata?.modeSelection) ? 2 : room.maxClients,
+          clients: room.metadata?.modeSelection === 'wallduel' ? room.metadata?.duelPlayers ?? 0 : room.clients,
+          maxClients: room.metadata?.modeSelection === 'wallduel' ? 2 : room.maxClients,
           locked: room.locked,
           format: room.metadata?.format === 'squad' ? 'squad' : 'solo',
           phase: room.metadata?.phase ?? 'lobby',

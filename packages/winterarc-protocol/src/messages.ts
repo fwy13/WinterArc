@@ -1,9 +1,6 @@
 import type { ModeSelection, Controls, Motion, Position, Vec3, GameId, MatchFormat, Phase, Target, BossAction, DangerZone } from 'winterarc-core';
 
 export interface InputCommand extends Controls {
-  seaTurn?: number;
-  seaCell?: number;
-  seaFire?: boolean;
   duelTurn?: number;
   duelPose?: number;
   duelFire?: boolean;
@@ -80,9 +77,7 @@ export interface ShotEvent {
   playerId: string;
 }
 export interface DuelPrivate { round: number; turn: number; x: number; pose: number }
-export interface SeaPrivate { round:number; own:number[]; shots:number[]; incoming:number[]; sunk:number; enemySunk:number }
 export interface Snapshot {
-  sea: { turn:number; activeId:string; remaining:number; self?:SeaPrivate };
   duel: { hunterId: string; hiderId: string; stage: string; turn: number; ammo: number; remaining: number; yaw: number; pitch: number; charge: number; self?: DuelPrivate };
   modeSelection: ModeSelection;
   tournamentId: string;

@@ -120,7 +120,8 @@ export default function App() {
   }, []);
   const connect = async (join: boolean, roomId?: string, observer = false) => {
     const targetCode = roomId ?? code;
-    if (!ready || !networkRef.current || (status === 'connecting' || status === 'reconnecting')) return;
+    if (!ready || !networkRef.current || status === 'connecting' || status === 'reconnecting')
+      return;
     if (!meAccount) {
       setAccountOpen(true);
       return;
@@ -313,7 +314,13 @@ export default function App() {
     observer = false,
     password?: string,
   ): Promise<void> => {
-    if (!ready || !networkRef.current || snap || (status === 'connecting' || status === 'reconnecting'))
+    if (
+      !ready ||
+      !networkRef.current ||
+      snap ||
+      status === 'connecting' ||
+      status === 'reconnecting'
+    )
       throw new Error('GAME_NOT_READY');
     const profile = account.get();
     if (!profile) throw new Error('LOGIN_REQUIRED');
@@ -366,7 +373,7 @@ export default function App() {
   return (
     <>
       <LandscapeGate
-        active={touchControls && !!snap && snap.mode !== 'battleship' && ['playing', 'countdown'].includes(snap.phase)}
+        active={touchControls && !!snap && ['playing', 'countdown'].includes(snap.phase)}
         onBlocked={setLandscapeBlocked}
       />
       {accountOpen && (
@@ -418,15 +425,27 @@ export default function App() {
         >
           {meAccount ? <ProfileName player={meAccount} showRoles={false} /> : t('account.login')}
         </button>
-        <div className={`pointer-events-auto ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 ${compactPlay ? `match-tools ${touchControls ? 'match-tools--touch' : ''}` : ''}`}>
+        <div
+          className={`pointer-events-auto ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 ${compactPlay ? `match-tools ${touchControls ? 'match-tools--touch' : ''}` : ''}`}
+        >
           {compactPlay && (
-            <output
-              className="pointer-events-none match-stats"
-              aria-label="FPS / ping"
-            >
+            <output className="pointer-events-none match-stats" aria-label="FPS / ping">
               {fps} FPS · {status === 'online' ? `${ping} ms` : '— ms'}
             </output>
           )}
+          <button
+            className={`${compactPlay ? 'hidden' : ''} paper-tab grid size-11 shrink-0 place-items-center text-lg min-[480px]:w-auto min-[480px]:px-3`}
+            aria-label="Ủng hộ"
+            title="Ủng hộ"
+            onClick={() => {
+              pause();
+              window.open('/credits', '_blank', 'noopener,noreferrer');
+            }}
+          >
+            <span aria-hidden="true">
+              ❤️ <span className="hidden text-xs min-[480px]:inline">Ủng hộ</span>
+            </span>
+          </button>
           <button
             className={`${compactPlay ? 'hidden' : ''} paper-tab grid size-11 shrink-0 place-items-center text-lg min-[480px]:w-auto min-[480px]:px-3`}
             aria-label={t('shop.title')}
@@ -441,7 +460,11 @@ export default function App() {
             </span>
           </button>
           <button
-            className={compactPlay ? 'match-settings' : 'paper-tab grid size-11 shrink-0 place-items-center text-lg'}
+            className={
+              compactPlay
+                ? 'match-settings'
+                : 'paper-tab grid size-11 shrink-0 place-items-center text-lg'
+            }
             aria-label={t('settings.title')}
             title={t('settings.title')}
             onClick={() => {
@@ -458,7 +481,9 @@ export default function App() {
           <section className="max-w-md space-y-4 text-center">
             <h2 className="font-note text-3xl font-bold">{t('notice.reconnecting')}</h2>
             <p className="text-sm leading-7">{t('session.restoring')}</p>
-            <button className={secondary} onClick={leave}>{t('session.cancelRestore')}</button>
+            <button className={secondary} onClick={leave}>
+              {t('session.cancelRestore')}
+            </button>
           </section>
         </div>
       )}
@@ -517,8 +542,10 @@ export default function App() {
       )}
       {snap && snap.phase !== 'lobby' && (
         <>
-          {snap.phase === 'playing' && !paused && !help && !information && !settingsOpen && <GameHud state={snap} candidate={candidate} />}
-          {touchControls && snap.mode !== 'battleship' &&
+          {snap.phase === 'playing' && !paused && !help && !information && !settingsOpen && (
+            <GameHud state={snap} candidate={candidate} />
+          )}
+          {touchControls &&
             snap.phase === 'playing' &&
             status === 'online' &&
             !paused &&
@@ -535,7 +562,6 @@ export default function App() {
               />
             )}
           {snap.phase === 'playing' &&
-            snap.mode !== 'battleship' &&
             !paused &&
             !accountOpen &&
             !shopOpen &&
@@ -550,9 +576,7 @@ export default function App() {
             )}
           {snap.phase === 'countdown' && (
             <div className="match-countdown" role="timer" aria-label={t('hud.countdown')}>
-              <strong>
-                {snap.countdown || t('hud.go')}
-              </strong>
+              <strong>{snap.countdown || t('hud.go')}</strong>
             </div>
           )}
           {(snap.phase === 'finished' || snap.phase === 'intermission') && (
@@ -566,7 +590,6 @@ export default function App() {
             />
           )}
           {snap.phase === 'playing' &&
-            snap.mode !== 'battleship' &&
             !paused &&
             !pointerLocked &&
             !touchControls &&
@@ -575,10 +598,7 @@ export default function App() {
             !snap.players.find((p) => p.id === snap.selfId)?.observer &&
             !snap.players.find((p) => p.id === snap.selfId)?.out &&
             !snap.players.find((p) => p.id === snap.selfId)?.qualified && (
-              <button
-                className="match-focus"
-                onClick={resume}
-              >
+              <button className="match-focus" onClick={resume}>
                 {t('hud.focus')}
               </button>
             )}
@@ -590,9 +610,7 @@ export default function App() {
             !accountOpen &&
             !shopOpen && (
               <div className="match-pause">
-                <section
-                  className="match-pause-card"
-                >
+                <section className="match-pause-card">
                   <h2 className="font-note text-2xl font-bold">
                     {status === 'reconnecting' ? t('notice.reconnecting') : t('pause.title')}
                   </h2>
@@ -671,14 +689,17 @@ export default function App() {
           compactPlay
             ? `match-notices ${touchControls ? 'match-notices--touch' : ''}`
             : touchControls
-            ? 'pointer-events-none fixed left-1/2 top-[calc(max(0.5rem,env(safe-area-inset-top))+7rem)] z-[60] w-fit max-w-[65vw] -translate-x-1/2 [&>div:not(:last-child)]:hidden [&>div]:px-2 [&>div]:py-1 [&>div]:text-[10px]'
-            : 'pointer-events-none fixed bottom-4 right-4 z-[60] flex max-w-[min(90vw,400px)] flex-col gap-2'
+              ? 'pointer-events-none fixed left-1/2 top-[calc(max(0.5rem,env(safe-area-inset-top))+7rem)] z-[60] w-fit max-w-[65vw] -translate-x-1/2 [&>div:not(:last-child)]:hidden [&>div]:px-2 [&>div]:py-1 [&>div]:text-[10px]'
+              : 'pointer-events-none fixed bottom-4 right-4 z-[60] flex max-w-[min(90vw,400px)] flex-col gap-2'
         }
         role="status"
         aria-live="polite"
       >
         {notices.map((item) => (
-          <div key={item.id} className={compactPlay ? 'match-toast' : 'paper-tab px-5 py-3 text-sm text-fir'}>
+          <div
+            key={item.id}
+            className={compactPlay ? 'match-toast' : 'paper-tab px-5 py-3 text-sm text-fir'}
+          >
             {item.text}
           </div>
         ))}

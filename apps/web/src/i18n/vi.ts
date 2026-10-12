@@ -7,13 +7,6 @@ import { accountVi } from './account';
 export const vi = {
   "account.error.EMAILS_LIMIT": "Tối đa 1.000 email CLB.",
   "social.role.club": "Thành viên CLB",
-  "games.battleship.title": "Laser Fleet",
-  "games.battleship.tag": "1 VS 1 · BẮN TÀU BÍ MẬT",
-  "games.battleship.description": "Tìm đội tàu đối thủ bằng laser trên biển 6×6.",
-  "games.battleship.help": "Đúng 2 người. Mỗi người có 3 tàu dài 3–2–2 ô, được xếp bí mật ngẫu nhiên. Chọn ô biển đối thủ rồi bắn laser. Sau mỗi phát đổi lượt; hết 20 giây tự bắn một ô chưa thử. Đánh chìm cả 3 tàu để thắng.",
-  "ingame.battleship.label": "Hải chiến laser",
-  "ingame.battleship.hint": "Chọn ô · Bắn laser",
-  "pair.exactTwo": "Mode này cần đúng 2 người chơi.",
   "games.wallduel.title": "Wall Duel",
   "games.wallduel.tag": "1 VS 1 · LASER VÀ NÉ ĐẠN",
   "games.wallduel.description": "Ba viên xuyên tường. Đổi vai, đổi tư thế, né đường laser!",

@@ -8,13 +8,6 @@ import { vi, type TranslationKey } from './vi';
 export const en: Record<TranslationKey, string> = {
   ...vi, // Fallback first; English translations below take precedence.
   "social.role.club": "Club member",
-  "games.battleship.title": "Laser Fleet",
-  "games.battleship.tag": "1 VS 1 · HIDDEN FLEETS",
-  "games.battleship.description": "Find your rival’s ships with laser strikes on a 6×6 sea.",
-  "games.battleship.help": "Exactly 2 players. Each fleet has three secret, randomly placed ships of length 3–2–2. Select an enemy cell and fire. Each shot swaps turns. At 20 seconds the server fires an untried cell automatically. Sink all three ships to win.",
-  "ingame.battleship.label": "Laser fleet",
-  "ingame.battleship.hint": "Select a cell · Fire laser",
-  "pair.exactTwo": "This mode requires exactly 2 players.",
   "games.wallduel.title": "Wall Duel",
   "games.wallduel.tag": "1 VS 1 · LASER AND DODGE",
   "games.wallduel.description": "Three shots through the wall. Swap roles, change poses, dodge the laser!",

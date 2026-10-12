@@ -4,4 +4,3 @@ export * from './src/movement.js';
 export * from './src/combat.js';
 export * from './src/icebreak.js';
 export * from './src/voxelRay.js';
-export * from './src/battleship.js';

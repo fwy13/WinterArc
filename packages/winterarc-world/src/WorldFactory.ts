@@ -3,7 +3,6 @@ import { importedMaps } from './maps/generated.js';
 import type { GameId } from 'winterarc-core';
 import { ChristmasVillageBuilder } from './ChristmasVillageBuilder.js';
 import { SnowIslandBuilder } from './SnowIslandBuilder.js';
-import { BattleshipBuilder } from './BattleshipBuilder.js';
 import { WallDuelBuilder } from './WallDuelBuilder.js';
 import { KnockoutBuilder } from './KnockoutBuilder.js';
 import { IceBreakBuilder } from './IceBreakBuilder.js';
@@ -12,7 +11,6 @@ import { GiftRaceBuilder } from './GiftRaceBuilder.js';
 import type { VoxelWorld } from './VoxelWorld.js';
 export class WorldFactory {
   private static readonly builders: Record<GameId, () => VoxelWorld> = {
-    battleship: () => new BattleshipBuilder().build(),
     wallduel: () => new WallDuelBuilder().build(),
     knockout: () => new KnockoutBuilder().build(),
     hunt: () => new ChristmasVillageBuilder().build(),
@@ -28,7 +26,7 @@ export class WorldFactory {
   }
   static create(id: GameId): VoxelWorld {
     const world = this.createBase(id);
-    if (id === 'wallduel' || id === 'battleship') return world;
+    if (id === 'wallduel') return world;
     return importedMaps[id] ? applyMapDocument(world, importedMaps[id]!) : world;
   }
   static get(id: GameId): VoxelWorld {

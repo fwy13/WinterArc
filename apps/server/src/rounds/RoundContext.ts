@@ -1,4 +1,4 @@
-import type { SoundKind, ShotEvent, InputCommand, DuelPrivate, SeaPrivate } from 'winterarc-protocol';
+import type { SoundKind, ShotEvent, InputCommand, DuelPrivate } from 'winterarc-protocol';
 import type { Vec3 } from 'winterarc-core';
 import type { VoxelWorld } from 'winterarc-world';
 import type { WinterState, PlayerState } from '../state.js';
@@ -13,7 +13,6 @@ export interface RoundContext {
   sound(kind: SoundKind, at: Vec3, playerId?: string): void;
   shot(event: ShotEvent): void;
   found(id: string, score: number): void;
-  privateSea(id:string,data:SeaPrivate):void;
   privateDuel(id: string, data: DuelPrivate): void;
 }
 export interface RoundController {

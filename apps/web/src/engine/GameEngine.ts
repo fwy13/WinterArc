@@ -1,4 +1,3 @@
-import { seaInput } from './SeaInput';
 import { bindRenderResolution } from './RenderResolution';
 import { duelControls, duelPose } from './WallDuelInput';
 import { knockoutPower } from './KnockoutInput';
@@ -205,11 +204,11 @@ export class GameEngine {
       this.players.reconcile(
         me,
         this.map.world,
-        snapshot.mode === 'battleship' || snapshot.mode === 'wallduel' || snapshot.mode === 'knockout' || snapshot.phase !== 'playing' || me.hp <= 0 || me.out || me.qualified,
-        snapshot.mode !== 'knockout' && snapshot.mode !== 'wallduel' && snapshot.mode !== 'battleship',
+        snapshot.mode === 'wallduel' || snapshot.mode === 'knockout' || snapshot.phase !== 'playing' || me.hp <= 0 || me.out || me.qualified,
+        snapshot.mode !== 'knockout' && snapshot.mode !== 'wallduel',
       );
     else if (!active) this.preview();
-    this.players.sync(['wallduel','battleship'].includes(snapshot.mode) ? [] : snapshot.players, snapshot.selfId, active);
+    this.players.sync(snapshot.mode === 'wallduel' ? [] : snapshot.players, snapshot.selfId, active);
     this.refreshInput();
     if (before?.phase !== snapshot.phase && snapshot.phase !== 'playing') this.setPaused(true);
   }
@@ -226,7 +225,7 @@ export class GameEngine {
     this.input.clear();
     this.refreshInput();
     if (paused) this.audio.setActive(false);
-    if (lock && !paused && !hasTouchControls() && this.snapshot?.mode !== 'battleship') this.noa.container.setPointerLock(true);
+    if (lock && !paused && !hasTouchControls()) this.noa.container.setPointerLock(true);
     else if (paused) this.noa.container.setPointerLock(false);
   }
   setVisible(visible: boolean): void {
@@ -241,7 +240,6 @@ export class GameEngine {
   private refreshInput(): void {
     const s = this.snapshot,
       me = s?.players.find((p) => p.id === s.selfId);
-    this.input.pointerLockRequired = s?.mode !== 'battleship';
     this.input.enabled = !!(
       this.online &&
       !this.paused &&
@@ -301,14 +299,9 @@ export class GameEngine {
       cmd.jump=cmd.sprint=false;cmd.forward=0;
       if(this.snapshot.selfId===this.snapshot.duel.hunterId)cmd.side=0;
     }
-    if (this.mode.id === 'battleship') {
-      const shot=seaInput.pending;seaInput.pending=null;
-      cmd.forward=cmd.side=0;cmd.jump=cmd.sprint=false;
-      if(this.input.enabled && shot && shot.turn===this.snapshot.sea.turn){cmd.seaCell=shot.cell;cmd.seaTurn=shot.turn;cmd.seaFire=true;}
-    }
     this.callbacks.input(cmd);
     const me = this.snapshot.players.find((p) => p.id === this.snapshot?.selfId);
-    if (this.mode.id !== 'knockout' && this.mode.id !== 'wallduel' && this.mode.id !== 'battleship' && me && me.hp > 0 && !me.out && !me.qualified) this.players.predict(cmd, this.map.world);
+    if (this.mode.id !== 'knockout' && this.mode.id !== 'wallduel' && me && me.hp > 0 && !me.out && !me.qualified) this.players.predict(cmd, this.map.world);
     if (
       (this.mode.id === 'crab' || this.mode.id === 'icebreak') &&
       this.input.attacking &&

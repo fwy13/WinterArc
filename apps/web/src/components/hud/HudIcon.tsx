@@ -3,7 +3,6 @@ export type HudIconName = GameId | 'clock' | 'players' | 'check' | 'heart';
 const paths: Record<HudIconName, string> = {
   hunt: 'M9 5h6M10 5V2h4v3M8 9a4 4 0 1 0 8 0 4 4 0 0 0-8 0M6 18a6 4 0 1 0 12 0 6 4 0 0 0-12 0M4 13l3 3M20 13l-3 3M11 9h.01M13 9h.01M12 17h.01M12 20h.01',
   crab: 'M5 13c0-5 14-5 14 0v3c0 6-14 6-14 0zM8 10V8M16 10V8M5 14l-3-3V6l3 2 2-3v5l-2 2M19 14l3-3V6l-3 2-2-3v5l2 2M5 17l-3 3M19 17l3 3',
-  battleship: 'M12 2v17M8 6h8M3 13c0 10 18 10 18 0M3 13l-2 4M21 13l2 4',
   wallduel: 'M12 2v5M12 17v5M2 12h5M17 12h5M19 12a7 7 0 1 1-14 0 7 7 0 0 1 14 0',
   knockout: 'M8 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0M6 17a6 5 0 1 0 12 0 6 5 0 0 0-12 0M2 12l5 3M22 12l-5 3M12 15v4',
   icebreak: 'M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7M9 4l3 3 3-3M9 20l3-3 3 3M4 10l4-1-1-4M17 19l-1-4 4-1M4 14l4 1-1 4M17 5l-1 4 4 1',

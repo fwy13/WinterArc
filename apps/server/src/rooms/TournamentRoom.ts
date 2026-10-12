@@ -83,7 +83,7 @@ export class TournamentRoom extends Room<WinterState> {
     if (options.tournament) {
       try {
         this.state.tournamentId = accounts().createRoomTournament(owner.adminSessionHash, this.roomId,
-          options.tournament.title, initialMode, options.tournament.rounds, ['wallduel','battleship'].includes(String(options.mode)) ? 2 : options.tournament.maxPlayers);
+          options.tournament.title, initialMode, options.tournament.rounds, options.mode === 'wallduel' ? 2 : options.tournament.maxPlayers);
       } catch (error) {
         throw new ServerError(error instanceof AccountError ? error.status : 400, error instanceof Error ? error.message : 'TOURNAMENT_INVALID');
       }
@@ -116,10 +116,6 @@ export class TournamentRoom extends Room<WinterState> {
       if (queue.commands.length > 3) {
         const dropped = queue.commands.splice(0, queue.commands.length - 3);
         if (dropped.some(c => c.jump)) queue.commands[0].jump = true;
-        const shot = dropped.find(c => c.seaFire && c.seaTurn === this.state.seaTurn);
-        if (shot && !queue.commands.some(c => c.seaFire)) {
-          Object.assign(queue.commands[0], { seaFire: true, seaCell: shot.seaCell, seaTurn: shot.seaTurn });
-        }
       }
     });
     this.onMessage('ready', (client) => {
@@ -133,7 +129,7 @@ export class TournamentRoom extends Room<WinterState> {
         (value !== 'solo' && value !== 'squad')
       )
         return;
-      this.state.format = ['knockout', 'wallduel', 'battleship'].includes(this.state.mode) ? 'solo' : value;
+      this.state.format = ['knockout', 'wallduel'].includes(this.state.mode) ? 'solo' : value;
       this.publishListing();
       for (const p of this.state.players.values()) p.ready = false;
     });
@@ -144,7 +140,7 @@ export class TournamentRoom extends Room<WinterState> {
         (value !== 'random' && !this.isMode(value))
       )
         return;
-      if (['wallduel','battleship'].includes(value) && [...this.state.players.values()].filter(p => p.connected && !p.observer).length > 2) { client.send('notice', '@pair.exactTwo'); return; }
+      if (value === 'wallduel' && [...this.state.players.values()].filter(p => p.connected && !p.observer).length > 2) { client.send('notice', '@duel.exactTwo'); return; }
       this.state.modeSelection = value;
       if (value !== 'random') this.selectMode(value);
       for (const p of this.state.players.values()) p.ready = false;
@@ -201,8 +197,8 @@ export class TournamentRoom extends Room<WinterState> {
   }
   private drawMode(): GameId {
     const count = [...this.state.players.values()].filter(p => p.connected && !p.observer).length;
-    const enabled = accounts().enabledModes().filter(mode => !['wallduel','battleship'].includes(mode) || count === 2);
-    if (!enabled.length) return accounts().enabledModes()[0]; // startMatch reports the exact two-player requirement.
+    const enabled = accounts().enabledModes().filter(mode => mode !== 'wallduel' || count === 2);
+    if (!enabled.length) return 'wallduel'; // startMatch reports the exact two-player requirement.
     const choices = enabled.filter(mode => mode !== this.lastPlayedMode);
     const modes = choices.length ? choices : enabled;
     return modes[randomInt(modes.length)];
@@ -212,7 +208,7 @@ export class TournamentRoom extends Room<WinterState> {
   }
   private selectMode(mode: GameId): void {
     this.state.mode = mode;
-    if (mode === 'knockout' || ['wallduel','battleship'].includes(mode)) this.state.format = 'solo';
+    if (mode === 'knockout' || mode === 'wallduel') this.state.format = 'solo';
     // Retain these wire fields so existing snapshots and previews remain compatible.
     this.state.stages.clear();
     this.state.stages.push(mode);
@@ -253,7 +249,7 @@ export class TournamentRoom extends Room<WinterState> {
     if (!observer && this.state.modeSelection !== 'random' && !accounts().enabledModes().includes(this.state.mode)) throw new ServerError(403, 'MODE_DISABLED');
     if (!observer && !['lobby', 'finished'].includes(this.state.phase)) throw new ServerError(403, 'Match already begun');
     const contestants = [...this.state.players.values()].filter(p => !p.observer && p.connected);
-    const capacity = ['wallduel','battleship'].includes(this.state.modeSelection) ? 2 : this.state.tournamentId ? accounts().event(this.state.tournamentId).max_players : MAX_PLAYERS;
+    const capacity = this.state.modeSelection === 'wallduel' ? 2 : this.state.tournamentId ? accounts().event(this.state.tournamentId).max_players : MAX_PLAYERS;
     if ((!observer && contestants.length >= capacity) || (observer && [...this.state.players.values()].filter(p => p.observer).length >= 4)) throw new ServerError(409, 'ROOM_FULL');
     try { accounts().claim(profile.id, this.roomId); }
     catch (error) { throw new ServerError(409, error instanceof Error ? error.message : 'ALREADY_IN_ROOM'); }
@@ -358,7 +354,7 @@ export class TournamentRoom extends Room<WinterState> {
       return;
     }
     const nextMode = this.state.modeSelection === 'random' ? this.drawMode() : this.state.modeSelection;
-    if (['wallduel','battleship'].includes(nextMode) && connected.length !== 2) { client.send('notice', '@pair.exactTwo'); return; }
+    if (nextMode === 'wallduel' && connected.length !== 2) { client.send('notice', '@duel.exactTwo'); return; }
     if (!accounts().enabledModes().includes(nextMode)) { client.send('notice', '@account.error.MODE_DISABLED'); return; }
     if (this.state.tournamentId) {
       try { accounts().beginHeat(this.state.tournamentId, connected.map(([,p]) => p.accountId), nextMode); }
@@ -463,7 +459,6 @@ export class TournamentRoom extends Room<WinterState> {
           playerId,
         }),
       shot: (event) => this.broadcast('shot', event),
-      privateSea: (id, data) => this.clients.find(c => c.sessionId === id)?.send('seaPrivate', data),
       privateDuel: (id, data) => this.clients.find(c => c.sessionId === id)?.send('duelPrivate', data),
       found: (id, score) => this.clients.find((c) => c.sessionId === id)?.send('found', { score }),
     };
@@ -588,7 +583,7 @@ export class TournamentRoom extends Room<WinterState> {
       const cmd = this.inputs.get(id)?.commands.shift();
       if (cmd) p.ack = cmd.seq;
       if (p.observer || p.out || p.qualified) continue;
-      if (['wallduel','battleship'].includes(this.state.mode)) { this.controller?.input?.(id, p.connected ? cmd : undefined); continue; }
+      if (this.state.mode === 'wallduel') { this.controller?.input?.(id, p.connected ? cmd : undefined); continue; }
       if (this.state.mode === 'knockout') {
         if (p.connected && cmd) this.controller?.aim?.(id, cmd.yaw, cmd.knockoutPower ?? 5, cmd.knockoutTurn ?? 0);
         continue;
@@ -601,6 +596,6 @@ export class TournamentRoom extends Room<WinterState> {
       this.completeStage('all-out');
       return;
     }
-    if (!['wallduel','battleship'].includes(this.state.mode) && !this.state.remaining) this.completeStage('timeout');
+    if (this.state.mode !== 'wallduel' && !this.state.remaining) this.completeStage('timeout');
   }
 }

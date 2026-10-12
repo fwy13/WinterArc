@@ -15,7 +15,6 @@ export const gameIcons: Record<GameId, string> = {
   icebreak: '❄',
   knockout: '☃',
   wallduel: '◎',
-  battleship: '⚓',
 };
 interface Props {
   randomMode: boolean;
@@ -55,7 +54,7 @@ export default function ArcadeMenu(p: Props) {
   const enabledModes = useEnabledGames();
   const { t } = useI18n();
   useEffect(() => { if (!enabledModes.includes(p.selected) && enabledModes[0]) p.onSelect(enabledModes[0]); }, [enabledModes, p.selected, p.onSelect]);
-  useEffect(() => { if ((p.selected === 'knockout' || ['wallduel','battleship'].includes(p.selected)) && !p.randomMode && p.format !== 'solo') p.onFormat('solo'); }, [p.selected, p.randomMode, p.format, p.onFormat]);
+  useEffect(() => { if ((p.selected === 'knockout' || p.selected === 'wallduel') && !p.randomMode && p.format !== 'solo') p.onFormat('solo'); }, [p.selected, p.randomMode, p.format, p.onFormat]);
   const busy = p.status === 'connecting';
   return (
     <main className="relative z-10 mx-auto grid w-full max-w-7xl gap-4 px-3 pb-8 pt-28 sm:gap-8 sm:px-10 sm:pb-20 sm:pt-28 min-[640px]:grid-cols-[1fr_1fr] lg:gap-16 [@media(max-height:500px)]:pt-14 [@media(max-height:500px)]:gap-3">
@@ -97,7 +96,7 @@ export default function ArcadeMenu(p: Props) {
                   <input type="number" className={field} min={1} max={20} value={p.tournamentRounds} required onChange={e => p.onTournamentRounds(Number(e.target.value))} />
                 </label>
                 <label className="block text-xs">{t('account.capacity')}
-                  <input type="number" className={field} min={2} max={['wallduel','battleship'].includes(p.selected) && !p.randomMode ? 2 : 32} disabled={['wallduel','battleship'].includes(p.selected) && !p.randomMode} value={['wallduel','battleship'].includes(p.selected) && !p.randomMode ? 2 : p.tournamentCapacity} required onChange={e => p.onTournamentCapacity(Number(e.target.value))} />
+                  <input type="number" className={field} min={2} max={p.selected === 'wallduel' && !p.randomMode ? 2 : 32} disabled={p.selected === 'wallduel' && !p.randomMode} value={p.selected === 'wallduel' && !p.randomMode ? 2 : p.tournamentCapacity} required onChange={e => p.onTournamentCapacity(Number(e.target.value))} />
                 </label>
               </div>
             </>}
@@ -134,7 +133,7 @@ export default function ArcadeMenu(p: Props) {
                 onChange={(e) => p.onFormat(e.target.value as MatchFormat)}
               >
                 <option value="solo">{t('format.solo')}</option>
-                <option value="squad" disabled={(p.selected === 'knockout' || ['wallduel','battleship'].includes(p.selected)) && !p.randomMode}>{t('format.squad')}</option>
+                <option value="squad" disabled={(p.selected === 'knockout' || p.selected === 'wallduel') && !p.randomMode}>{t('format.squad')}</option>
               </select>
               </>
           <label className="flex items-center gap-3 text-sm">
