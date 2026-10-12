@@ -418,7 +418,7 @@ export default function App() {
         >
           {meAccount ? <ProfileName player={meAccount} showRoles={false} /> : t('account.login')}
         </button>
-        <div className={`pointer-events-auto ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 ${compactPlay ? 'match-tools' : ''}`}>
+        <div className={`pointer-events-auto ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 ${compactPlay ? `match-tools ${touchControls ? 'match-tools--touch' : ''}` : ''}`}>
           {compactPlay && (
             <output
               className="pointer-events-none match-stats"
@@ -517,7 +517,7 @@ export default function App() {
       )}
       {snap && snap.phase !== 'lobby' && (
         <>
-          {['playing', 'countdown'].includes(snap.phase) && <GameHud state={snap} candidate={candidate} />}
+          {snap.phase === 'playing' && !paused && !help && !information && !settingsOpen && <GameHud state={snap} candidate={candidate} />}
           {touchControls &&
             snap.phase === 'playing' &&
             status === 'online' &&
@@ -547,12 +547,10 @@ export default function App() {
               />
             )}
           {snap.phase === 'countdown' && (
-            <div className="match-countdown">
-              <p>{t('hud.countdown')}</p>
+            <div className="match-countdown" role="timer" aria-label={t('hud.countdown')}>
               <strong>
                 {snap.countdown || t('hud.go')}
               </strong>
-              <h2>{t(`games.${snap.mode}.title`)}</h2>
             </div>
           )}
           {(snap.phase === 'finished' || snap.phase === 'intermission') && (

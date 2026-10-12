@@ -35,7 +35,7 @@ export function HudLayout({ state: s, candidate = false, touch = false }: {
       <div className="hud-alive"><HudIcon name="players" /><span>{alive}<small> / {s.entrants}</small></span><span className="hud-alive-label">{t('cup.remaining')}</span></div>
     </section>
 
-    {playing && (active || s.mode === 'crab' || s.mode === 'colorfall') && <section className={`hud-objective hud-surface ${urgent ? 'is-urgent' : ''}`}>
+    {playing && s.mode !== 'knockout' && (active || s.mode === 'crab' || s.mode === 'colorfall') && <section className={`hud-objective hud-surface ${urgent ? 'is-urgent' : ''}`}>
       <div className="hud-objective-heading"><span className="hud-eyebrow">{t(`ingame.${s.mode}.label`)}</span><span className="hud-live-dot" /></div>
       {(s.mode === 'hunt' || s.mode === 'giftrace') && <>
         <div className="hud-objective-value"><strong>{progress}<small> / {goal}</small></strong><span>{t(s.mode === 'hunt' ? 'hud.found' : 'hud.checkpoint')}</span></div>
@@ -55,12 +55,12 @@ export function HudLayout({ state: s, candidate = false, touch = false }: {
         </div>
         <div className="hud-boss-meta"><span>{t('floor.cycle', { count: s.floor.cycle + 1 })}</span><span>{t(s.floor.dropped ? 'ingame.hold' : 'ingame.moveNow')}</span></div>
       </>}
-      {(s.mode === 'icebreak' || s.mode === 'knockout') && <>
+      {s.mode === 'icebreak' && <>
         <div className="hud-objective-value"><strong>{alive}<small> / {s.entrants}</small></strong><span>{t('hud.alive')}</span></div>
         <div className="hud-boss-meta"><span>{t('ingame.radius')}</span><strong>{Math.max(0, s.ice.radius).toFixed(1)} m</strong></div>
-        <p className="hud-description">{t(s.mode === 'knockout' ? 'ingame.knockout.hint' : 'ingame.icebreak.hint')}</p>
+        <p className="hud-description">{t('ingame.icebreak.hint')}</p>
       </>}
-      {active && <ModeHint state={s} />}
+      {active && (!touch || urgent || s.mode === 'giftrace' && progress >= goal) && <ModeHint state={s} />}
     </section>}
 
     {playing && active && <>

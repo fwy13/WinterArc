@@ -91,7 +91,7 @@ export default function MobileControls({ mode, candidate }: Props) {
     if (look.current?.id === event.pointerId) look.current = null;
   };
   return (
-    <div className="pointer-events-none fixed inset-0 z-30 select-none">
+    <div className="mobile-controls pointer-events-none fixed inset-0 select-none">
       <div
         className="pointer-events-auto absolute bottom-0 right-0 top-[calc(max(0.5rem,env(safe-area-inset-top))+3rem)] w-1/2 touch-none"
         aria-label={t('mobile.look')}
