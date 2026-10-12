@@ -7,6 +7,7 @@ import { useI18n } from '../i18n';
 interface Props {
   mode: GameId;
   candidate: boolean;
+  duelHunter?: boolean;
 }
 
 function HoldButton({ label, action }: { label: string; action: 'jump' | 'attack' }) {
@@ -44,7 +45,7 @@ function HoldButton({ label, action }: { label: string; action: 'jump' | 'attack
   );
 }
 
-export default function MobileControls({ mode, candidate }: Props) {
+export default function MobileControls({ mode, candidate, duelHunter = false }: Props) {
   const { t } = useI18n();
   const zone = useRef<HTMLDivElement>(null);
   const look = useRef<{ id: number; x: number; y: number } | null>(null);
@@ -94,6 +95,7 @@ export default function MobileControls({ mode, candidate }: Props) {
     <div className="mobile-controls pointer-events-none fixed inset-0 select-none">
       <div
         className="pointer-events-auto absolute bottom-0 right-0 top-[calc(max(0.5rem,env(safe-area-inset-top))+3rem)] w-1/2 touch-none"
+        style={mode === 'wallduel' && !duelHunter ? { display: 'none' } : undefined}
         aria-label={t('mobile.look')}
         onContextMenu={(event) => event.preventDefault()}
         onPointerDown={(event) => {
@@ -116,7 +118,7 @@ export default function MobileControls({ mode, candidate }: Props) {
       />
       <div
         ref={zone}
-        style={mode === 'knockout' ? { display: 'none' } : undefined}
+        style={mode === 'knockout' || (mode === 'wallduel' && duelHunter) ? { display: 'none' } : undefined}
         aria-label={t('mobile.move')}
         className="pointer-events-auto absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(0.5rem,env(safe-area-inset-left))] size-28 touch-none"
       />
@@ -137,7 +139,7 @@ export default function MobileControls({ mode, candidate }: Props) {
             {t('mobile.interact')}
           </button>
         )}
-        {mode !== 'knockout' && <HoldButton action="jump" label={t('mobile.jump')} />}
+        {mode !== 'knockout' && mode !== 'wallduel' && <HoldButton action="jump" label={t('mobile.jump')} />}
       </div>
     </div>
   );

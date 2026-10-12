@@ -1,6 +1,9 @@
 import type { ModeSelection, Controls, Motion, Position, Vec3, GameId, MatchFormat, Phase, Target, BossAction, DangerZone } from 'winterarc-core';
 
 export interface InputCommand extends Controls {
+  duelTurn?: number;
+  duelPose?: number;
+  duelFire?: boolean;
   knockoutPower?: number;
   knockoutTurn?: number;
   seq: number;
@@ -53,6 +56,7 @@ export interface BlockChange {
   block: number;
 }
 export type SoundKind =
+  | 'sniper'
   | 'found'
   | 'throw'
   | 'hit'
@@ -72,7 +76,9 @@ export interface ShotEvent {
   hit: boolean;
   playerId: string;
 }
+export interface DuelPrivate { round: number; turn: number; x: number; pose: number }
 export interface Snapshot {
+  duel: { hunterId: string; hiderId: string; stage: string; turn: number; ammo: number; remaining: number; yaw: number; pitch: number; charge: number; self?: DuelPrivate };
   modeSelection: ModeSelection;
   tournamentId: string;
   tournamentTitle: string;

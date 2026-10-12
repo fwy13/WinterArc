@@ -3,7 +3,7 @@ import { accessTicket, refreshAccount, account } from '../account/service';
 import { Client, type Room } from 'colyseus.js';
 import { t, translateNotice } from '../i18n';
 import { createStore } from '../hooks/useStore';
-import { TOURNAMENT_ROOM, type Snapshot, type ShotEvent, type SoundEvent } from 'winterarc-protocol';
+import { TOURNAMENT_ROOM, type Snapshot, type DuelPrivate, type ShotEvent, type SoundEvent } from 'winterarc-protocol';
 import { type GameId } from 'winterarc-core';
 import type { RoomState, PublicRoom, ConnectOptions, ClientMessages } from 'winterarc-protocol';
 
@@ -110,6 +110,7 @@ export class NetworkService {
     window.addEventListener('beforeunload', this.warnBeforeLeave);
     history.replaceState(null, '', `?room=${encodeURIComponent(room.roomId)}`);
     connection.set('online');
+    let duelPrivate: DuelPrivate | undefined;
     const sync = () => {
       if (this.room !== room || !room.state?.players) return;
       const s = room.state;
@@ -120,6 +121,9 @@ export class NetworkService {
         tournamentRounds: s.tournamentRounds,
         tournamentCompleted: s.tournamentCompleted,
         resultMode: s.resultMode,
+        duel: { hunterId:s.duelHunterId, hiderId:s.duelHiderId, stage:s.duelStage, turn:s.duelTurn,
+          ammo:s.duelAmmo, remaining:s.duelRemaining, yaw:s.duelYaw, pitch:s.duelPitch, charge:s.duelCharge,
+          self:s.duelHiderId===room.sessionId && duelPrivate?.round===s.round && duelPrivate?.turn===s.duelTurn ? duelPrivate : undefined },
         knockout: { stage: s.knockoutStage, remaining: s.knockoutRemaining, turn: s.knockoutTurn },
         ice: { radius: s.iceRadius, shrinkIn: s.iceShrinkIn },
         privateRoom: s.privateRoom,
@@ -222,6 +226,10 @@ export class NetworkService {
       this.onSnapshot(value);
     };
     room.onStateChange(sync);
+    room.onMessage('duelPrivate', (data: DuelPrivate) => {
+      if (this.room !== room) return;
+      duelPrivate=data;sync();
+    });
     room.onMessage('notice', (m: string) => this.onNotice(translateNotice(m)));
     room.onMessage('sound', (event: SoundEvent) => this.onSound(event));
     room.onMessage('shot', (e: ShotEvent) => this.onShot(e));

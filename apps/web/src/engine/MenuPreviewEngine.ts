@@ -134,7 +134,7 @@ export class MenuPreviewEngine {
     this.angle = 0;
     this.camera.alpha = -1.1;
     this.camera.beta = resolved === 'crab' ? 0.98 : 0.86;
-    this.camera.radius = resolved === 'hunt' ? 112 : resolved === 'giftrace' ? 104 : 66;
+    this.camera.radius = resolved === 'wallduel' ? 34 : resolved === 'hunt' ? 112 : resolved === 'giftrace' ? 104 : 66;
     this.camera.target.set(0, resolved === 'hunt' || resolved === 'crab' ? 4 : 8, 0);
   }
 

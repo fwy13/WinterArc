@@ -70,6 +70,7 @@ export class AudioManager {
         this.master.gain.value = this.volume;
         this.master.connect(this.context.destination);
         for (const kind of [
+          'sniper',
           'step',
           'found',
           'throw',
@@ -226,6 +227,7 @@ export class AudioManager {
           if (tt >= 0) sample += Math.sin(2 * Math.PI * notes[n] * tt) * Math.exp(-tt * 8) * 0.24;
         }
       } else if (kind === 'step') sample = smooth * 0.7 + Math.sin(2 * Math.PI * 90 * t) * 0.15;
+      else if (kind === 'sniper') sample = noise * Math.exp(-t * 42) * .85 + Math.sin(2 * Math.PI * (100 - 45 * u) * t) * .35;
       else if (kind === 'throw') sample = smooth * 0.8;
       else if (kind === 'break')
         sample = noise * 0.55 + Math.sin(2 * Math.PI * (1400 - 900 * u) * t) * 0.2;

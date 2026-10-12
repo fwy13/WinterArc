@@ -28,7 +28,8 @@ export default function Lobby({
   const { t } = useI18n(),
     me = s.players.find((p) => p.id === s.selfId),
     host = s.hostId === s.selfId;
-  const enough = s.players.filter((p) => !p.observer && p.connected).length >= (s.tournamentId ? 2 : 1);
+  const count = s.players.filter(p => !p.observer && p.connected).length;
+  const enough = s.modeSelection === 'wallduel' ? count === 2 : s.players.filter((p) => !p.observer && p.connected).length >= (s.tournamentId ? 2 : 1);
   const ready = s.players.every((p) => p.observer || p.id === s.hostId || !p.connected || p.ready);
   return (
     <main className="relative z-10 mx-auto max-w-2xl px-3 pb-8 pt-28 sm:px-5 sm:pb-20 sm:pt-28 [@media(max-height:500px)]:pt-14">
@@ -48,7 +49,7 @@ export default function Lobby({
                 onChange={(e) => onFormat(e.target.value as MatchFormat)}
               >
                 <option value="solo">{t('format.solo')}</option>
-                <option value="squad" disabled={s.mode === 'knockout'}>{t('format.squad')}</option>
+                <option value="squad" disabled={(s.mode === 'knockout' || s.mode === 'wallduel')}>{t('format.squad')}</option>
               </select>
             </label>
             </>
@@ -82,7 +83,7 @@ export default function Lobby({
           </button>
         </div>
         <p className="mb-3 text-xs tracking-widest text-ink/65">
-          {t('lobby.players')} · {s.players.filter(p => !p.observer).length}/{s.tournamentId ? s.tournamentCapacity : MAX_PLAYERS}
+          {t('lobby.players')} · {s.players.filter(p => !p.observer).length}/{s.modeSelection === 'wallduel' ? 2 : s.tournamentId ? s.tournamentCapacity : MAX_PLAYERS}
         </p>
         <ul className="max-h-[30dvh] sm:max-h-72 divide-y divide-ink/15 overflow-auto">
           {s.players.map((p) => (
@@ -103,7 +104,7 @@ export default function Lobby({
             </li>
           ))}
         </ul>
-        <p className="my-5 text-sm text-ink/65">{enough ? t('lobby.hint') : t('lobby.minimum')}</p>
+        <p className="my-5 text-sm text-ink/65">{s.modeSelection === 'wallduel' ? t('duel.exactTwo') : enough ? t('lobby.hint') : t('lobby.minimum')}</p>
         {s.tournamentId && <TournamentBoard state={s} />}
         <div className="flex flex-wrap gap-3">
           {host ? (

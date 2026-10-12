@@ -530,6 +530,7 @@ export default function App() {
               <MobileControls
                 key={`${snap.roomId}:${snap.round}`}
                 mode={snap.mode}
+                duelHunter={snap.duel?.hunterId === snap.selfId}
                 candidate={candidate}
               />
             )}

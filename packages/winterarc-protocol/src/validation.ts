@@ -9,6 +9,9 @@ export function validInput(value: unknown): value is InputCommand {
 function validateTyped(v: InputCommand): boolean {
   return (
     v &&
+    (v.duelTurn === undefined || (Number.isSafeInteger(v.duelTurn) && v.duelTurn >= 1 && v.duelTurn <= 4294967295)) &&
+    (v.duelPose === undefined || (Number.isInteger(v.duelPose) && v.duelPose >= 0 && v.duelPose <= 2)) &&
+    (v.duelFire === undefined || typeof v.duelFire === 'boolean') &&
     (v.knockoutPower === undefined || (Number.isInteger(v.knockoutPower) && v.knockoutPower >= 1 && v.knockoutPower <= 10)) &&
     (v.knockoutTurn === undefined || (Number.isSafeInteger(v.knockoutTurn) && v.knockoutTurn >= 1 && v.knockoutTurn <= 65535)) &&
     Number.isSafeInteger(v.round) &&

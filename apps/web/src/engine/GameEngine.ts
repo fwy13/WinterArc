@@ -1,3 +1,4 @@
+import { duelControls, duelPose } from './WallDuelInput';
 import { knockoutPower } from './KnockoutInput';
 import { AuroraSky } from 'winterarc-rendering';
 import { SpectatorCamera } from './SpectatorCamera';
@@ -157,6 +158,9 @@ export class GameEngine {
     if (!this.snapshot) this.preview();
   }
   private preview(): void {
+    if(this.mode.id === 'wallduel') {
+      this.noa.ents.setPosition(this.noa.playerEntity,[9,10,-16]);this.noa.camera.heading=-.45;this.noa.camera.pitch=.35;return;
+    }
     const crab = this.mode.id === 'crab';
     this.noa.ents.setPosition(this.noa.playerEntity, crab ? [13, 12, -23] : [-14, 15, -36]);
     this.noa.camera.heading = crab ? -0.5 : 0.35;
@@ -197,11 +201,11 @@ export class GameEngine {
       this.players.reconcile(
         me,
         this.map.world,
-        snapshot.mode === 'knockout' || snapshot.phase !== 'playing' || me.hp <= 0 || me.out || me.qualified,
-        snapshot.mode !== 'knockout',
+        snapshot.mode === 'wallduel' || snapshot.mode === 'knockout' || snapshot.phase !== 'playing' || me.hp <= 0 || me.out || me.qualified,
+        snapshot.mode !== 'knockout' && snapshot.mode !== 'wallduel',
       );
     else if (!active) this.preview();
-    this.players.sync(snapshot.players, snapshot.selfId, active);
+    this.players.sync(snapshot.mode === 'wallduel' ? [] : snapshot.players, snapshot.selfId, active);
     this.refreshInput();
     if (before?.phase !== snapshot.phase && snapshot.phase !== 'playing') this.setPaused(true);
   }
@@ -273,7 +277,7 @@ export class GameEngine {
   }
   shot(event: ShotEvent): void {
     this.mode.onShot(event);
-    this.audio.play('throw', event.from, event.playerId);
+    this.audio.play(this.mode.id === 'wallduel' ? 'sniper' : 'throw', event.from, event.playerId);
     if (event.hit) this.audio.play(this.mode.id === 'icebreak' ? 'break' : 'hit', event.to, event.playerId);
   }
   private tick = (): void => {
@@ -288,9 +292,14 @@ export class GameEngine {
       cmd.forward = cmd.side = 0; cmd.jump = cmd.sprint = false;
       cmd.knockoutPower = knockoutPower.get(); cmd.knockoutTurn = this.snapshot.knockout.turn;
     }
+    if (this.mode.id === 'wallduel') {
+      cmd.duelTurn=this.snapshot.duel.turn;cmd.duelPose=duelPose.get();cmd.duelFire=this.input.attacking || (this.input.enabled && duelControls.fireRequested);duelControls.fireRequested=false;
+      cmd.jump=cmd.sprint=false;cmd.forward=0;
+      if(this.snapshot.selfId===this.snapshot.duel.hunterId)cmd.side=0;
+    }
     this.callbacks.input(cmd);
     const me = this.snapshot.players.find((p) => p.id === this.snapshot?.selfId);
-    if (this.mode.id !== 'knockout' && me && me.hp > 0 && !me.out && !me.qualified) this.players.predict(cmd, this.map.world);
+    if (this.mode.id !== 'knockout' && this.mode.id !== 'wallduel' && me && me.hp > 0 && !me.out && !me.qualified) this.players.predict(cmd, this.map.world);
     if (
       (this.mode.id === 'crab' || this.mode.id === 'icebreak') &&
       this.input.attacking &&

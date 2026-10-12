@@ -1,5 +1,5 @@
 import type { GameId, MatchFormat, ModeSelection } from 'winterarc-core';
-import type { Snapshot, InputCommand, SoundEvent, ShotEvent } from './messages.js';
+import type { Snapshot, InputCommand, DuelPrivate, SoundEvent, ShotEvent } from './messages.js';
 
 export interface PublicRoom {
   roomId: string;
@@ -36,6 +36,7 @@ export interface ClientMessages {
   lobby: undefined;
 }
 export interface ServerMessages {
+  duelPrivate: DuelPrivate;
   notice: string;
   sound: SoundEvent;
   shot: ShotEvent;

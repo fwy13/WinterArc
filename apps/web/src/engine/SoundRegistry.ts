@@ -10,6 +10,7 @@ const sound = (name: string, volume: number, maxDistance = 30): SoundDefinition 
 });
 /** Files are optional; every cue has a cached synthesized fallback. */
 export const EXTERNAL_SOUNDS: Record<Cue, SoundDefinition> = {
+  sniper: sound('events/sniper', 0.6, 45),
   step: sound('player/step', 0.55),
   found: sound('events/found', 0.65),
   throw: sound('events/snowball', 0.5),
