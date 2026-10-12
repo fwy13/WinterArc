@@ -11,7 +11,7 @@ const sliders: { key: keyof GameSettings; min: number; max: number; step: number
   { key: 'mouseSensitivity', min: 1, max: 20, step: 0.5 },
   { key: 'touchSensitivity', min: 0.25, max: 3, step: 0.05 },
   { key: 'fov', min: 55, max: 100, step: 1 },
-  { key: 'renderScale', min: 0.5, max: 1.5, step: 0.1 },
+  { key: 'renderScale', min: 0.5, max: 10, step: 0.1 },
 ];
 export default function SettingsPanel({
   onClose,
