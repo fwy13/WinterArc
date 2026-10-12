@@ -366,7 +366,7 @@ export default function App() {
   return (
     <>
       <LandscapeGate
-        active={touchControls && !!snap && ['playing', 'countdown'].includes(snap.phase)}
+        active={touchControls && !!snap && snap.mode !== 'battleship' && ['playing', 'countdown'].includes(snap.phase)}
         onBlocked={setLandscapeBlocked}
       />
       {accountOpen && (
@@ -518,7 +518,7 @@ export default function App() {
       {snap && snap.phase !== 'lobby' && (
         <>
           {snap.phase === 'playing' && !paused && !help && !information && !settingsOpen && <GameHud state={snap} candidate={candidate} />}
-          {touchControls &&
+          {touchControls && snap.mode !== 'battleship' &&
             snap.phase === 'playing' &&
             status === 'online' &&
             !paused &&
@@ -535,6 +535,7 @@ export default function App() {
               />
             )}
           {snap.phase === 'playing' &&
+            snap.mode !== 'battleship' &&
             !paused &&
             !accountOpen &&
             !shopOpen &&
@@ -565,6 +566,7 @@ export default function App() {
             />
           )}
           {snap.phase === 'playing' &&
+            snap.mode !== 'battleship' &&
             !paused &&
             !pointerLocked &&
             !touchControls &&

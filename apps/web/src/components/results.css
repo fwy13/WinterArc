@@ -112,3 +112,26 @@
   .result-actions { position:static; }
 }
 @media(prefers-reduced-motion:reduce) { .result-shell { animation:none; } }
+
+/* Compact result screen on phones and short landscape viewports. */
+@media (pointer:coarse), (max-width:600px) {
+ .result-screen { padding:66px 8px max(8px,env(safe-area-inset-bottom)); }
+ .result-hero { padding:10px 12px; text-align:left; }
+ .result-hero h1 { font-size:24px; margin:4px 0; }
+ .result-hero>p { margin:0; font-size:11px; max-height:28px; }
+ .result-podium { display:none; }
+ .result-kicker { font-size:8px; }
+ .result-personal { padding:8px 12px; }
+ .result-personal-stats strong { font-size:20px; }
+ .result-badges { margin-top:6px; flex-wrap:nowrap; overflow-x:auto; justify-content:flex-start; }
+ .result-badge { flex:0 0 auto; padding:4px 7px; }
+ .result-badge small { display:none; }
+ .result-badge>span { font-size:16px; }
+ .result-tabs { padding-top:6px; }
+ .result-content { min-height:70px; padding-bottom:8px; }
+ .result-ranking { max-height:32dvh; }
+ .result-ranking li { padding:5px; }
+ .result-actions { padding:8px 12px max(8px,env(safe-area-inset-bottom)); }
+ .result-ready-status { margin-bottom:5px; }
+ .result-buttons button { min-height:44px; padding:8px; }
+}

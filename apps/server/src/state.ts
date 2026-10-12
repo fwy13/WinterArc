@@ -141,6 +141,9 @@ export class WinterState extends Schema implements RoomState {
   tournamentRounds = 0;
   tournamentCompleted = 0;
   resultMode: GameId = 'hunt';
+  seaTurn = 1;
+  seaActiveId = '';
+  seaRemaining = 20;
   duelHunterId = '';
   duelHiderId = '';
   duelStage = 'hide';
@@ -189,6 +192,7 @@ defineTypes(WinterState, {
   tournamentCapacity: 'uint8',
   tournamentId: 'string', tournamentTitle: 'string', tournamentRounds: 'uint8', tournamentCompleted: 'uint8',
   resultMode: 'string',
+  seaTurn: 'uint32', seaActiveId: 'string', seaRemaining: 'float32',
   duelHunterId: 'string',
   duelHiderId: 'string',
   duelStage: 'string',

@@ -36,7 +36,11 @@ export class ApiError extends Error {
   constructor(public readonly status: number, message: string) { super(message); }
 }
 export async function api<T>(path: string, body?: unknown): Promise<T> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
   const response = await fetch(`${apiBase}${path}`, {
+    signal: controller.signal,
     method: body === undefined ? 'GET' : 'POST',
     credentials: 'include',
     cache: 'no-store',
@@ -50,16 +54,23 @@ export async function api<T>(path: string, body?: unknown): Promise<T> {
   }
   if (typeof data.serverNow === 'number') serverClockOffset = data.serverNow - Date.now();
   return data as T;
+  } finally { clearTimeout(timeout); }
 }
 export async function refreshAccount(): Promise<void> {
   try { presentProfile((await api<{ profile: AccountProfile }>('/me')).profile); }
   catch (error) { if (!(error instanceof ApiError && error.status === 401)) throw error; }
 }
-export async function loadAccount(): Promise<void> {
+let accountRequest: Promise<void> | null = null;
+export function loadAccount(): Promise<void> {
+  if (accountRequest) return accountRequest;
+  accountLoading.set(true);
+  accountRequest = (async () => {
   try {
     accountConfig.set(await api<AccountConfig>('/config'));
     await refreshAccount();
   } finally { accountLoading.set(false); }
+  })().finally(() => { accountRequest = null; });
+  return accountRequest;
 }
 export async function signOut(): Promise<void> {
   await api('/auth/logout', {});

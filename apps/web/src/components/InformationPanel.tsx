@@ -15,6 +15,7 @@ export default function InformationPanel({ onClose }: { onClose: () => void }) {
       <p>{t('club.gameIntro')}</p>
       <p className="club-credit-role">{t('club.role')}</p>
       <ClubSocials />
+      <a href="/credits" target="_blank" rel="noopener noreferrer" className="club-email">Donate · Thu chi công khai ↗</a>
       <a className="club-email" href={`mailto:${CLUB.email}`}>{CLUB.email}</a>
     </section>
     <p className="mt-5 text-sm leading-6 text-ink/70">{t('about.thanks')}</p>

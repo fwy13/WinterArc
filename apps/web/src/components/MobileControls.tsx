@@ -27,7 +27,7 @@ function HoldButton({ label, action }: { label: string; action: 'jump' | 'attack
     <button
       type="button"
       aria-label={label}
-      className="hud-touch-button"
+      className={`hud-touch-button ${action === 'jump' ? 'hud-touch-button--jump' : ''}`}
       onContextMenu={(event) => event.preventDefault()}
       onPointerDown={(event) => {
         if (pointer.current !== null) return;
@@ -35,6 +35,7 @@ function HoldButton({ label, action }: { label: string; action: 'jump' | 'attack
         pointer.current = event.pointerId;
         event.currentTarget.setPointerCapture(event.pointerId);
         touchInput[action] = true;
+        if (action === 'jump') touchInput.jumpQueued = true;
       }}
       onPointerUp={release}
       onPointerCancel={release}
@@ -54,9 +55,9 @@ export default function MobileControls({ mode, candidate, duelHunter = false }: 
     clearTouchInput();
     const joystick = nipplejs.create({
       zone: zone.current,
-      mode: 'static',
-      position: { left: '50%', top: '50%' },
-      size: 88,
+      mode: 'dynamic',
+      multitouch: false,
+      size: 96,
       color: '#fff8e8',
       restOpacity: 0.3,
       dynamicPage: true,
@@ -87,7 +88,7 @@ export default function MobileControls({ mode, candidate, duelHunter = false }: 
       document.removeEventListener('visibilitychange', visibility);
       reset();
     };
-  }, []);
+  }, [mode, duelHunter]);
   const endLook = (event: PointerEvent<HTMLDivElement>) => {
     if (look.current?.id === event.pointerId) look.current = null;
   };
@@ -120,7 +121,7 @@ export default function MobileControls({ mode, candidate, duelHunter = false }: 
         ref={zone}
         style={mode === 'knockout' || (mode === 'wallduel' && duelHunter) ? { display: 'none' } : undefined}
         aria-label={t('mobile.move')}
-        className="pointer-events-auto absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(0.5rem,env(safe-area-inset-left))] size-28 touch-none"
+        className="pointer-events-auto absolute left-0 bottom-0 top-[calc(max(0.5rem,env(safe-area-inset-top))+3rem)] w-1/2 touch-none"
       />
       <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] flex items-end gap-2">
         {(mode === 'crab' || mode === 'icebreak') && (

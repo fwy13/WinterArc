@@ -11,7 +11,7 @@ const sliders: { key: keyof GameSettings; min: number; max: number; step: number
   { key: 'mouseSensitivity', min: 1, max: 20, step: 0.5 },
   { key: 'touchSensitivity', min: 0.25, max: 3, step: 0.05 },
   { key: 'fov', min: 55, max: 100, step: 1 },
-  { key: 'renderScale', min: 0.5, max: 10, step: 0.1 },
+  { key: 'renderScale', min: 0.5, max: 2, step: 0.05 },
 ];
 export default function SettingsPanel({
   onClose,
@@ -69,7 +69,7 @@ export default function SettingsPanel({
         </label>
         {sliders.map(({ key, min, max, step }) => (
           <label key={key} className="block text-sm">
-            <span className="flex justify-between gap-3">{t(`settings.${key}` as TranslationKey)}<output className="font-mono">{(value[key] as number).toFixed(key === 'fov' ? 0 : 2)}</output></span>
+            <span className="flex justify-between gap-3">{key === 'renderScale' ? (locale === 'vi' ? 'Độ nét (100% = gốc)' : 'Resolution (100% = native)') : t(`settings.${key}` as TranslationKey)}<output className="font-mono">{key === 'renderScale' ? `${Math.round(value.renderScale * 100)}%` : (value[key] as number).toFixed(key === 'fov' ? 0 : 2)}</output></span>
             <input className="mt-2 w-full accent-fir" type="range" min={min} max={max} step={step} value={value[key] as number} onChange={event => updateSettings({ [key]: Number(event.target.value) })} />
           </label>
         ))}

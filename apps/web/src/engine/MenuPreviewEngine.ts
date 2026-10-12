@@ -1,3 +1,4 @@
+import { bindRenderResolution } from './RenderResolution';
 import { AuroraSky } from 'winterarc-rendering';
 import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
 import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData.js';
@@ -51,7 +52,7 @@ export class MenuPreviewEngine {
   private readonly scene: Scene;
   private readonly camera: ArcRotateCamera;
   private readonly roots = new Map<GameId, TransformNode>();
-  private readonly resize: ResizeObserver;
+  private readonly resolution: ReturnType<typeof bindRenderResolution>;
   private readonly trees: TreeModels;
 
   private selected: GameId = 'hunt';
@@ -66,11 +67,11 @@ export class MenuPreviewEngine {
   constructor(canvas: HTMLCanvasElement) {
     this.engine = new Engine(canvas, true);
 
-    // Giới hạn độ phân giải render trên màn hình Retina.
+    this.resolution = bindRenderResolution(this.engine, () => settings.get().renderScale);
+    // Match the in-game DPR and pixel-budget policy.
     const applySettings = () => {
       this.sky?.setQuality(settings.get().skyQuality);
-      this.engine.setHardwareScalingLevel(1 / settings.get().renderScale);
-      this.engine.resize();
+      this.resolution.refresh();
     };
     applySettings();
     this.unsubscribeSettings = settings.subscribe(applySettings);
@@ -97,8 +98,7 @@ export class MenuPreviewEngine {
     light.intensity = 1.1;
     light.groundColor = new Color3(0.28, 0.35, 0.4);
 
-    this.resize = new ResizeObserver(() => this.engine.resize());
-    this.resize.observe(canvas);
+
   }
 
   async initialize(): Promise<void> {
@@ -294,7 +294,7 @@ export class MenuPreviewEngine {
     this.sky?.dispose();
     this.unsubscribeSettings();
     this.disposed = true;
-    this.resize.disconnect();
+    this.resolution.dispose();
     this.engine.stopRenderLoop(this.render);
     this.trees.dispose();
     this.scene.dispose();

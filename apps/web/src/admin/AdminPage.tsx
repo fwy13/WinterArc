@@ -1,3 +1,5 @@
+import FundPanel from '../fund/FundPanel';
+import './admin.css';
 import AdminGameControls from './AdminGameControls';
 import { useCallback, useEffect, useState } from 'react';
 import type { AdminPlayer, ProfileRole } from 'winterarc-profile';
@@ -10,6 +12,7 @@ type Session = { username: string; expires: number };
 type Directory = { users: AdminPlayer[]; total: number };
 export default function AdminPage() {
   const { t, locale, setLocale } = useI18n();
+  const [tab, setTab] = useState<'players'|'games'|'fund'>('players');
   const [session, setSession] = useState<Session | null>(null);
   const [checking, setChecking] = useState(true), [busy, setBusy] = useState(false);
   const [username, setUsername] = useState(''), [password, setPassword] = useState('');
@@ -55,7 +58,7 @@ export default function AdminPage() {
     setSponsor(user.roles.find(role => role.startsWith('sponsor_')) || '');
     setSaved(false); setError('');
   };
-  return <main className="min-h-dvh bg-paper px-3 py-6 text-ink sm:p-8">
+  return <main className="admin-app min-h-dvh bg-paper px-3 py-6 text-ink sm:p-8">
     <header className="mx-auto mb-6 flex max-w-6xl flex-wrap items-center justify-between gap-3">
       <h1 className="font-note text-3xl font-bold">{t('admin.title')}</h1>
       <div className="flex flex-wrap gap-2">
@@ -77,8 +80,8 @@ export default function AdminPage() {
       <label className="block">{t('admin.username')}<input autoComplete="username" className={field} value={username} required maxLength={100} disabled={busy} onChange={e => setUsername(e.target.value)} /></label>
       <label className="block">{t('admin.password')}<input type="password" autoComplete="current-password" className={field} value={password} required disabled={busy} onChange={e => setPassword(e.target.value)} /></label>
       <button className={`${primary} w-full`} disabled={busy}>{t('account.login')}</button>
-    </form> : <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-[1fr_1fr]">
-      <section className={`${panel} min-w-0 !p-4`}>
+    </form> : <><nav className="admin-tabs">{([['players','Người chơi'],['games','Minigame & CLB'],['fund','Donate & Thu chi']] as const).map(([id,label])=><button key={id} aria-pressed={tab===id} onClick={()=>setTab(id)}>{label}</button>)}<a href="/credits" target="_blank" rel="noopener noreferrer">Trang công khai ↗</a></nav><div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-[1fr_1fr]">
+      <section hidden={tab!=='players'} className={`${panel} min-w-0 !p-4`}>
         <p className="mb-3 text-sm">{t('admin.signedIn', { name: session.username })}</p>
         <form className="flex gap-2" onSubmit={e => { e.preventDefault(); setSearch(query.trim()); setPage(0); setRefresh(n => n + 1); }}>
           <input className={`${field} min-w-0`} value={query} maxLength={80} onChange={e => setQuery(e.target.value)} placeholder={t('admin.search')} aria-label={t('admin.search')} />
@@ -97,7 +100,7 @@ export default function AdminPage() {
           <button className={secondary} disabled={busy || (page + 1) * 25 >= data.total} onClick={() => setPage(n => n + 1)}>→</button>
         </div>
       </section>
-      <section className={`${panel} min-w-0 !p-4`}>
+      <section hidden={tab!=='players'} className={`${panel} min-w-0 !p-4`}>
         {!selected ? <p>{t('admin.choose')}</p> : <fieldset disabled={busy} className="space-y-4">
           <ProfileName player={selected} />
           <p className="break-all font-mono text-xs">{selected.email || selected.id}</p>
@@ -138,7 +141,8 @@ export default function AdminPage() {
           <p className="text-xs text-ink/60">{t('admin.schoolHint')}</p>
         </fieldset>}
       </section>
-      <AdminGameControls onError={fail} />
-    </div>}
+      {tab==='games' && <AdminGameControls onError={fail} />}
+      {tab==='fund' && <div className="md:col-span-2"><FundPanel admin onError={fail}/></div>}
+    </div></>}
   </main>;
 }

@@ -51,12 +51,14 @@ export function accountRoutes(allowedOrigins: string[]): Router {
     (req: Request, res: Response, next: NextFunction) => { Promise.resolve().then(() => fn(req, res)).catch(next); };
 
   router.get('/config', route((_req, res) => res.json({ googleClientId: clientId, economy: ECONOMY, serverNow: Date.now() })));
-  router.post('/auth/challenge', route((_req, res) => {
+  router.post('/auth/challenge', route((req, res) => {
     if (!clientId) throw new AccountError(503, 'GOOGLE_NOT_CONFIGURED');
     if (challenges.size >= 5000) throw new AccountError(429, 'RATE_LIMITED');
+    const previous = cookie(req, 'winter_nonce');
+    if ((challenges.get(previous) || 0) > Date.now() + 60000) { res.json({ nonce: previous }); return; }
     const nonce = secret();
-    challenges.set(nonce, Date.now() + 300000);
-    res.cookie('winter_nonce', nonce, { ...cookieOptions, maxAge: 300000 });
+    challenges.set(nonce, Date.now() + 1800000);
+    res.cookie('winter_nonce', nonce, { ...cookieOptions, maxAge: 1800000 });
     res.json({ nonce });
   }));
   router.post('/auth/google', route(async (req, res) => {
@@ -115,6 +117,10 @@ export function accountRoutes(allowedOrigins: string[]): Router {
     const page = Math.max(0, Math.min(100000, Math.floor(Number(req.query.page) || 0)));
     res.json(store.adminUsers(hash, search, page));
   }));
+  router.get('/fund', route((req,res) => res.json(store.funds.report(Number(req.query.page)))));
+  router.post('/admin/fund/config', route((req,res) => {store.funds.configure(store.adminAuth.requireHash(admin(req)),req.body || {});res.json({ok:true});}));
+  router.post('/admin/fund/entry', route((req,res) => {store.funds.add(store.adminAuth.requireHash(admin(req)),req.body || {});res.json({ok:true});}));
+  router.post('/admin/fund/void', route((req,res) => {store.funds.void(store.adminAuth.requireHash(admin(req)),req.body?.id,req.body?.reason);res.json({ok:true});}));
   router.get('/games', route((_req, res) => res.json({ enabledModes: store.enabledModes() })));
   router.post('/admin/economy', route((req, res) => {
     const hash = admin(req);

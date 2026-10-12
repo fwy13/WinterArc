@@ -1,3 +1,4 @@
+import { FundStore } from './FundStore.js';
 import Database from 'better-sqlite3';
 import { AdminAuth } from './AdminAuth.js';
 import { AccountError } from './errors.js';
@@ -36,6 +37,7 @@ const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 export class AccountStore {
   private readonly db: Database.Database;
   readonly adminAuth: AdminAuth;
+  readonly funds: FundStore;
   // One authoritative game process. Prevent the same account farming concurrent rooms.
   private readonly playing = new Map<string, string>();
 
@@ -117,6 +119,7 @@ export class AccountStore {
       `);
     })();
     this.adminAuth = new AdminAuth(this.db);
+    this.funds = new FundStore(this.db);
   }
   private row(id: string): UserRow {
     const row = this.db.prepare('SELECT * FROM users WHERE id = ?').get(id) as UserRow | undefined;

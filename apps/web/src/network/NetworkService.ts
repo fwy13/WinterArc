@@ -3,7 +3,7 @@ import { accessTicket, refreshAccount, account } from '../account/service';
 import { Client, type Room } from 'colyseus.js';
 import { t, translateNotice } from '../i18n';
 import { createStore } from '../hooks/useStore';
-import { TOURNAMENT_ROOM, type Snapshot, type DuelPrivate, type ShotEvent, type SoundEvent } from 'winterarc-protocol';
+import { TOURNAMENT_ROOM, type Snapshot, type DuelPrivate, type SeaPrivate, type ShotEvent, type SoundEvent } from 'winterarc-protocol';
 import { type GameId } from 'winterarc-core';
 import type { RoomState, PublicRoom, ConnectOptions, ClientMessages } from 'winterarc-protocol';
 
@@ -110,6 +110,7 @@ export class NetworkService {
     window.addEventListener('beforeunload', this.warnBeforeLeave);
     history.replaceState(null, '', `?room=${encodeURIComponent(room.roomId)}`);
     connection.set('online');
+    let seaPrivate: SeaPrivate | undefined;
     let duelPrivate: DuelPrivate | undefined;
     const sync = () => {
       if (this.room !== room || !room.state?.players) return;
@@ -121,6 +122,7 @@ export class NetworkService {
         tournamentRounds: s.tournamentRounds,
         tournamentCompleted: s.tournamentCompleted,
         resultMode: s.resultMode,
+        sea: { turn:s.seaTurn, activeId:s.seaActiveId, remaining:s.seaRemaining, self:seaPrivate?.round===s.round ? seaPrivate : undefined },
         duel: { hunterId:s.duelHunterId, hiderId:s.duelHiderId, stage:s.duelStage, turn:s.duelTurn,
           ammo:s.duelAmmo, remaining:s.duelRemaining, yaw:s.duelYaw, pitch:s.duelPitch, charge:s.duelCharge,
           self:s.duelHiderId===room.sessionId && duelPrivate?.round===s.round && duelPrivate?.turn===s.duelTurn ? duelPrivate : undefined },
@@ -226,6 +228,7 @@ export class NetworkService {
       this.onSnapshot(value);
     };
     room.onStateChange(sync);
+    room.onMessage('seaPrivate', (data:SeaPrivate) => {if(this.room!==room)return;seaPrivate=data;sync();});
     room.onMessage('duelPrivate', (data: DuelPrivate) => {
       if (this.room !== room) return;
       duelPrivate=data;sync();

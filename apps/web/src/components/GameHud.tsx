@@ -1,3 +1,4 @@
+import BattleshipHud from './BattleshipHud';
 import WallDuelHud from './WallDuelHud';
 import KnockoutHud from './KnockoutHud';
 import { CLUB } from '../config/club';
@@ -25,6 +26,7 @@ export function HudLayout({ state: s, candidate = false, touch = false }: {
   const urgent = s.mode === 'colorfall' ? !s.floor.dropped && s.floor.remaining <= 3
     : s.mode === 'crab' ? ['slam', 'leap', 'shockwave'].includes(s.boss.action)
     : (s.mode === 'icebreak' || s.mode === 'knockout') && s.ice.shrinkIn > 0 && s.ice.shrinkIn <= 3;
+  if (s.mode === 'battleship') return <BattleshipHud state={s} />;
   if (s.mode === 'wallduel') return <WallDuelHud state={s} touch={touch} />;
   return <div className={`game-hud ${touch ? 'game-hud--touch' : ''}`} data-mode={s.mode}>
     {s.mode === 'knockout' && playing && s.knockout && <KnockoutHud state={s} active={active} />}

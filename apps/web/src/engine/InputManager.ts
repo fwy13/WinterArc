@@ -1,3 +1,4 @@
+import { seaInput } from './SeaInput';
 import { duelControls, selectDuelPose } from './WallDuelInput';
 import { knockoutControls, knockoutPower, adjustKnockoutPower } from './KnockoutInput';
 import { settings } from '../config/settings';
@@ -5,6 +6,7 @@ import { touchInput, clearTouchInput } from './TouchInput';
 import type { Engine } from 'noa-engine';
 import type { InputCommand } from 'winterarc-protocol';
 export class InputManager {
+  pointerLockRequired = true;
   private keys = new Set<string>();
   private mouseDown = false;
   private abort = new AbortController();
@@ -59,7 +61,7 @@ export class InputManager {
       (e) => {
         if (e.pointerType === 'mouse' && e.button === 0 && this.enabled) {
           this.mouseDown = true;
-          noa.container.setPointerLock(true);
+          if (this.pointerLockRequired) noa.container.setPointerLock(true);
         }
       },
       options,
@@ -83,7 +85,7 @@ export class InputManager {
     document.addEventListener(
       'pointerlockchange',
       () => {
-        if (!document.pointerLockElement && this.enabled) this.onPause();
+        if (!document.pointerLockElement && this.enabled && this.pointerLockRequired) this.onPause();
       },
       options,
     );
@@ -107,6 +109,8 @@ export class InputManager {
       if (this.enabled) this.onInteract();
     }
     const clamp = (value: number) => Math.max(-1, Math.min(1, value));
+    const jump = this.enabled && (this.keys.has('Space') || touchInput.jump || touchInput.jumpQueued);
+    touchInput.jumpQueued = false;
     return {
       seq,
       round,
@@ -116,7 +120,7 @@ export class InputManager {
       side: this.enabled
         ? clamp(Number(this.keys.has('KeyD')) - Number(this.keys.has('KeyA')) + touchInput.side)
         : 0,
-      jump: this.enabled && (this.keys.has('Space') || touchInput.jump),
+      jump,
       sprint:
         this.enabled &&
         (this.keys.has('ShiftLeft') ||
@@ -127,6 +131,7 @@ export class InputManager {
     };
   }
   clear(): void {
+    seaInput.pending=null;
     duelControls.fireRequested=false;
     clearTouchInput();
     this.keys.clear();

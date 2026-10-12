@@ -4,7 +4,9 @@ import { t } from './i18n';
 import './style.css';
 
 // Admin does not mount the game session. The editor is a separate application.
-const Screen = lazy(() => /^\/editor\/?$/.test(location.pathname)
+const Screen = lazy(() => /^\/credits\/?$/.test(location.pathname)
+  ? import('./fund/CreditsPage')
+  : /^\/editor\/?$/.test(location.pathname)
   ? import('./tools/EditorMoved')
   : /^\/admin\/?$/.test(location.pathname)
   ? import('./admin/AdminPage')

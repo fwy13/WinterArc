@@ -9,9 +9,12 @@ export interface RoomPlayer extends Omit<PlayerSnapshot, 'id' | 'roles' | 'found
   found: Iterable<string>;
 }
 export interface RoomState extends Omit<Snapshot,
-  'roomId' | 'selfId' | 'duel' | 'knockout' | 'ice' | 'floor' | 'players' | 'targets' | 'zones'
+  'roomId' | 'selfId' | 'sea' | 'duel' | 'knockout' | 'ice' | 'floor' | 'players' | 'targets' | 'zones'
   | 'brokenIce' | 'stages' | 'winnerIds'
 > {
+  seaTurn:number;
+  seaActiveId:string;
+  seaRemaining:number;
   duelHunterId: string;
   duelHiderId: string;
   duelStage: string;

@@ -9,6 +9,9 @@ export function validInput(value: unknown): value is InputCommand {
 function validateTyped(v: InputCommand): boolean {
   return (
     v &&
+    (v.seaTurn === undefined || (Number.isSafeInteger(v.seaTurn) && v.seaTurn >= 1 && v.seaTurn <= 4294967295)) &&
+    (v.seaCell === undefined || (Number.isInteger(v.seaCell) && v.seaCell >= 0 && v.seaCell < 36)) &&
+    (v.seaFire === undefined || typeof v.seaFire === 'boolean') &&
     (v.duelTurn === undefined || (Number.isSafeInteger(v.duelTurn) && v.duelTurn >= 1 && v.duelTurn <= 4294967295)) &&
     (v.duelPose === undefined || (Number.isInteger(v.duelPose) && v.duelPose >= 0 && v.duelPose <= 2)) &&
     (v.duelFire === undefined || typeof v.duelFire === 'boolean') &&
