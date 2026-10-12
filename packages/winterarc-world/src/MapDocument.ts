@@ -22,14 +22,14 @@ export interface MapDocument {
 
 export function isReservedMapCell(mode: GameId, x: number, z: number, margin = 0): boolean {
   if (mode === 'crab') return Math.hypot(x + 0.5, z + 0.5) < 32 + margin;
-  if (mode === 'icebreak') return Math.hypot(x + 0.5, z + 0.5) < 21 + margin;
+  if ((mode === 'icebreak' || mode === 'knockout')) return Math.hypot(x + 0.5, z + 0.5) < 21 + margin;
   return mode === 'colorfall' && Math.abs(x) <= 19 + margin && Math.abs(z) <= 19 + margin;
 }
 
 export function validateMapDocument(doc: MapDocument, options: { draft?: boolean } = {}): void {
   if (!doc || typeof doc !== 'object') throw new Error('Invalid map document');
   if (typeof doc.name !== 'string' || doc.name.length > 120) throw new Error('Invalid map name');
-  if (![1, 2].includes(doc.version) || !['hunt', 'giftrace', 'crab', 'icebreak', 'colorfall'].includes(doc.mode))
+  if (![1, 2].includes(doc.version) || !['hunt', 'giftrace', 'crab', 'icebreak', 'knockout', 'colorfall'].includes(doc.mode))
     throw new Error('Unsupported map mode/version');
   if (!['replace', 'overlay'].includes(doc.placement)) throw new Error('Invalid placement');
   if (doc.placement === 'replace' && !['hunt', 'giftrace'].includes(doc.mode))
@@ -45,7 +45,7 @@ export function validateMapDocument(doc: MapDocument, options: { draft?: boolean
     if (x < -MAP_HALF || x >= MAP_HALF || z < -MAP_HALF || z >= MAP_HALF || y < 0 || y >= MAP_HEIGHT || (id !== 0 && !Object.hasOwn(PALETTE, id)))
       throw new Error(`Invalid block coordinates/id: ${row}`);
     if (doc.mode === 'crab' && Math.hypot(x + 0.5, z + 0.5) < 32) throw new Error('Crab arena radius 32 is reserved');
-    if (doc.mode === 'icebreak' && Math.hypot(x + 0.5, z + 0.5) < 21) throw new Error('Ice Break radius 21 is reserved');
+    if ((doc.mode === 'icebreak' || doc.mode === 'knockout') && Math.hypot(x + 0.5, z + 0.5) < 21) throw new Error('Ice Break radius 21 is reserved');
     if (doc.mode === 'colorfall' && Math.abs(x) <= 19 && Math.abs(z) <= 19) throw new Error('Color Fall arena [-19,19] is reserved');
   }
   if (doc.spawns.length > 256 || doc.targets.length > 4096 || doc.checkpoints.length > 200)

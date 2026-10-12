@@ -1,3 +1,4 @@
+import { knockoutPower } from './KnockoutInput';
 import { AuroraSky } from 'winterarc-rendering';
 import { SpectatorCamera } from './SpectatorCamera';
 import type { SpectatorOptions } from '../components/SpectatorControls';
@@ -187,7 +188,7 @@ export class GameEngine {
       this.playerCamera.reset();
       this.effects.clear();
       this.noa.camera.heading = 0;
-      this.noa.camera.pitch = 0;
+      this.noa.camera.pitch = snapshot.mode === 'knockout' ? .65 : 0;
     }
     const me = snapshot.players.find((p) => p.id === snapshot.selfId),
       active = snapshot.phase !== 'lobby';
@@ -196,7 +197,8 @@ export class GameEngine {
       this.players.reconcile(
         me,
         this.map.world,
-        snapshot.phase !== 'playing' || me.hp <= 0 || me.out || me.qualified,
+        snapshot.mode === 'knockout' || snapshot.phase !== 'playing' || me.hp <= 0 || me.out || me.qualified,
+        snapshot.mode !== 'knockout',
       );
     else if (!active) this.preview();
     this.players.sync(snapshot.players, snapshot.selfId, active);
@@ -282,9 +284,13 @@ export class GameEngine {
     if (!this.online || !this.snapshot || this.snapshot.phase !== 'playing') return;
     if (this.snapshot.players.find(p => p.id === this.snapshot?.selfId)?.observer) return;
     const cmd = this.input.sample(this.players.seq++, this.snapshot.round);
+    if (this.mode.id === 'knockout') {
+      cmd.forward = cmd.side = 0; cmd.jump = cmd.sprint = false;
+      cmd.knockoutPower = knockoutPower.get(); cmd.knockoutTurn = this.snapshot.knockout.turn;
+    }
     this.callbacks.input(cmd);
     const me = this.snapshot.players.find((p) => p.id === this.snapshot?.selfId);
-    if (me && me.hp > 0 && !me.out && !me.qualified) this.players.predict(cmd, this.map.world);
+    if (this.mode.id !== 'knockout' && me && me.hp > 0 && !me.out && !me.qualified) this.players.predict(cmd, this.map.world);
     if (
       (this.mode.id === 'crab' || this.mode.id === 'icebreak') &&
       this.input.attacking &&

@@ -26,7 +26,7 @@ function HoldButton({ label, action }: { label: string; action: 'jump' | 'attack
     <button
       type="button"
       aria-label={label}
-      className="pointer-events-auto size-12 touch-none select-none rounded-full border-2 border-ink/70 shadow-[2px_2px_0_#55716b] bg-paper/90 text-[10px] font-bold text-ink active:bg-paper-dark"
+      className="hud-touch-button"
       onContextMenu={(event) => event.preventDefault()}
       onPointerDown={(event) => {
         if (pointer.current !== null) return;
@@ -116,6 +116,7 @@ export default function MobileControls({ mode, candidate }: Props) {
       />
       <div
         ref={zone}
+        style={mode === 'knockout' ? { display: 'none' } : undefined}
         aria-label={t('mobile.move')}
         className="pointer-events-auto absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(0.5rem,env(safe-area-inset-left))] size-28 touch-none"
       />
@@ -127,7 +128,7 @@ export default function MobileControls({ mode, candidate }: Props) {
           <button
             type="button"
             disabled={!candidate}
-            className="pointer-events-auto size-12 touch-none rounded-full border-2 border-ink/70 shadow-[2px_2px_0_#55716b] bg-paper/90 text-[10px] font-bold disabled:opacity-25"
+            className={`hud-touch-button ${candidate ? 'hud-touch-button--ready' : ''}`}
             onPointerDown={(event) => {
               event.preventDefault();
               touchInput.interact = true;
@@ -136,7 +137,7 @@ export default function MobileControls({ mode, candidate }: Props) {
             {t('mobile.interact')}
           </button>
         )}
-        <HoldButton action="jump" label={t('mobile.jump')} />
+        {mode !== 'knockout' && <HoldButton action="jump" label={t('mobile.jump')} />}
       </div>
     </div>
   );

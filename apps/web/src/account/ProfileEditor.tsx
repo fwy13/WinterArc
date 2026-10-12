@@ -43,7 +43,6 @@ export default function ProfileEditor({
         </div>
         <p className="mt-3 break-all font-mono text-xs">ID: {me.id}</p>
       </div>
-      <p className="text-xs text-ink/70">{t('social.googleAvatarHint')}</p>
       {inRoom && <p className="text-sm text-berry">{t('account.leaveToEdit')}</p>}
       <label className="block">
         {t('account.name')}
@@ -83,7 +82,6 @@ export default function ProfileEditor({
           ))}
         </select>
       </label>
-      <p className="text-xs text-ink/65">{t('shop.coatHint')}</p>
       <button
         className={secondary}
         disabled={disabled || color === me.color}

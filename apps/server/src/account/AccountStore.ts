@@ -6,7 +6,7 @@ import { normalizeGameSettings, type GameSettings } from 'winterarc-profile';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
-import { PLAYER_SKINS, AVATAR_FRAMES, PROFILE_ROLES, THEMES, ECONOMY, SPIN_REWARDS, type AccountProfile, type PublicProfile, type TournamentStanding, type ProfileRole } from 'winterarc-profile';
+import { PLAYER_SKINS, AVATAR_FRAMES, PROFILE_ROLES, THEMES, ECONOMY, SPIN_REWARDS, type AdminPlayer, type AccountProfile, type PublicProfile, type TournamentStanding, type ProfileRole } from 'winterarc-profile';
 import { GAME_DEFINITIONS } from 'winterarc-gameplay';
 import { type GameId } from 'winterarc-core';
 
@@ -14,6 +14,7 @@ interface UserRow {
   id: string; google_sub: string; name: string; avatar: string; theme: string;
   color: number; premium: number; points: number; wins: number; matches: number;
   revision: number;
+  verified_email: string;
   school: '' | 'ctu';
   skin_id: string; avatar_url: string; frame_id: string; bonus_spins: number;
   tokens: number; name_changes: number; next_spin_at: number;
@@ -94,6 +95,9 @@ export class AccountStore {
     `);
     this.db.transaction(() => {
       const columns = new Set((this.db.prepare('PRAGMA table_info(users)').all() as { name: string }[]).map(c => c.name));
+      if (!columns.has('verified_email')) this.db.exec("ALTER TABLE users ADD COLUMN verified_email TEXT NOT NULL DEFAULT ''");
+      this.db.exec(`CREATE TABLE IF NOT EXISTS club_emails (email TEXT PRIMARY KEY, created INTEGER NOT NULL);
+        CREATE TABLE IF NOT EXISTS game_availability (mode TEXT PRIMARY KEY, enabled INTEGER NOT NULL CHECK(enabled IN (0,1)));`);
       if (!columns.has('skin_id')) this.db.exec("ALTER TABLE users ADD COLUMN skin_id TEXT NOT NULL DEFAULT 'explorer'");
       if (!columns.has('school')) this.db.exec("ALTER TABLE users ADD COLUMN school TEXT NOT NULL DEFAULT ''");
       const ticketColumns = new Set((this.db.prepare('PRAGMA table_info(tickets)').all() as { name: string }[]).map(c => c.name));
@@ -148,7 +152,8 @@ export class AccountStore {
       } catch { /* Empty/missing picture renders account initials. */ }
       const school = emailVerified === true && typeof email === 'string' &&
         /^[^@\s]+@student\.ctu\.edu\.vn$/i.test(email) ? 'ctu' : '';
-      this.db.prepare('UPDATE users SET avatar_url=?, school=? WHERE id=?').run(avatarUrl, school, user.id);
+      const verifiedEmail = emailVerified === true && typeof email === 'string' ? email.trim().toLowerCase() : '';
+      this.db.prepare('UPDATE users SET avatar_url=?, school=?, verified_email=? WHERE id=?').run(avatarUrl, school, verifiedEmail, user.id);
       const session = secret();
       this.db.prepare('DELETE FROM sessions WHERE expires < ?').run(Date.now());
       this.db.prepare('DELETE FROM tickets WHERE expires < ?').run(Date.now());
@@ -285,13 +290,72 @@ export class AccountStore {
       return { settings, revision: previous.revision + 1 };
     })();
   }
-  adminUsers(adminHash: string, search: string, page: number): { users: PublicProfile[]; total: number } {
+  adminUsers(adminHash: string, search: string, page: number): { users: AdminPlayer[]; total: number } {
     this.adminAuth.requireHash(adminHash);
     const pattern = `%${search.replace(/[\\%_]/g, '\\$&')}%`;
-    const where = "WHERE name LIKE ? ESCAPE '\\' OR id LIKE ? ESCAPE '\\'";
-    const rows = this.db.prepare(`SELECT id FROM users ${where} ORDER BY name,id LIMIT 25 OFFSET ?`).all(pattern, pattern, page * 25) as { id: string }[];
-    const count = this.db.prepare(`SELECT COUNT(*) AS n FROM users ${where}`).get(pattern, pattern) as { n: number };
-    return { users: rows.map(row => this.publicProfile(row.id)), total: count.n };
+    const where = "WHERE name LIKE ? ESCAPE '\\' OR id LIKE ? ESCAPE '\\' OR verified_email LIKE ? ESCAPE '\\'";
+    const rows = this.db.prepare(`SELECT id FROM users ${where} ORDER BY name,id LIMIT 25 OFFSET ?`).all(pattern, pattern, pattern, page * 25) as { id: string }[];
+    const count = this.db.prepare(`SELECT COUNT(*) AS n FROM users ${where}`).get(pattern, pattern, pattern) as { n: number };
+    return { users: rows.map(row => this.adminPlayer(row.id)), total: count.n };
+  }
+  private adminPlayer(id: string): AdminPlayer {
+    const u = this.row(id);
+    return { ...this.publicProfile(id), email: u.verified_email, tokens: u.tokens, bonusSpins: u.bonus_spins, revision: u.revision };
+  }
+  setEconomy(adminHash: string, id: string, tokens: unknown, bonusSpins: unknown, revision: unknown, reason: unknown): AdminPlayer {
+    const actor = this.adminAuth.requireHash(adminHash);
+    if (!Number.isSafeInteger(tokens) || Number(tokens) < 0 || Number(tokens) > 1_000_000_000 ||
+        !Number.isSafeInteger(bonusSpins) || Number(bonusSpins) < 0 || Number(bonusSpins) > 10000 ||
+        !Number.isSafeInteger(revision) || typeof reason !== 'string' || reason.trim().length < 3 || reason.length > 160)
+      throw new AccountError(400, 'ECONOMY_INVALID');
+    return this.db.transaction(() => {
+      const before = this.row(id);
+      if (before.revision !== revision) throw new AccountError(409, 'PLAYER_CONFLICT');
+      this.changeTokens(id, Number(tokens) - before.tokens, 'admin-adjustment');
+      this.db.prepare('UPDATE users SET bonus_spins=? WHERE id=?').run(bonusSpins, id);
+      this.db.prepare('INSERT INTO admin_audit VALUES (?,?,?,?,?)').run(randomUUID(), actor,
+        JSON.stringify({ type: 'economy', before: [before.tokens, before.bonus_spins], after: [tokens, bonusSpins], reason: reason.trim() }), id, Date.now());
+      return this.adminPlayer(id);
+    })();
+  }
+  clubEmails(adminHash: string): string[] {
+    this.adminAuth.requireHash(adminHash);
+    return (this.db.prepare('SELECT email FROM club_emails ORDER BY email').all() as { email: string }[]).map(r => r.email);
+  }
+  editClubEmails(adminHash: string, input: unknown, remove: unknown): string[] {
+    const actor = this.adminAuth.requireHash(adminHash);
+    if (!Array.isArray(input) || input.length < 1 || input.length > 100 || typeof remove !== 'boolean' ||
+        input.some(v => typeof v !== 'string' || v.length > 254 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.trim())))
+      throw new AccountError(400, 'EMAILS_INVALID');
+    const emails = [...new Set(input.map(v => String(v).trim().toLowerCase()))];
+    return this.db.transaction(() => {
+      for (const email of emails) {
+        if (remove) this.db.prepare('DELETE FROM club_emails WHERE email=?').run(email);
+        else this.db.prepare('INSERT OR IGNORE INTO club_emails VALUES (?,?)').run(email, Date.now());
+        this.db.prepare('UPDATE users SET revision=revision+1 WHERE verified_email=?').run(email);
+      }
+      const count = this.db.prepare('SELECT COUNT(*) AS n FROM club_emails').get() as { n: number };
+      if (count.n > 1000) throw new AccountError(400, 'EMAILS_LIMIT');
+      this.db.prepare('INSERT INTO admin_audit VALUES (?,?,?,?,?)').run(randomUUID(), actor,
+        remove ? 'club-remove' : 'club-add', JSON.stringify(emails), Date.now());
+      return this.clubEmails(adminHash);
+    })();
+  }
+  enabledModes(): GameId[] {
+    const disabled = new Set((this.db.prepare('SELECT mode FROM game_availability WHERE enabled=0').all() as {mode:string}[]).map(r => r.mode));
+    return (Object.keys(GAME_DEFINITIONS) as GameId[]).filter(id => !disabled.has(id));
+  }
+  setModeEnabled(adminHash: string, mode: unknown, enabled: unknown): GameId[] {
+    const actor = this.adminAuth.requireHash(adminHash);
+    if (typeof mode !== 'string' || !Object.hasOwn(GAME_DEFINITIONS, mode) || typeof enabled !== 'boolean')
+      throw new AccountError(400, 'MODE_INVALID');
+    return this.db.transaction(() => {
+      this.db.prepare('INSERT INTO game_availability VALUES (?,?) ON CONFLICT(mode) DO UPDATE SET enabled=excluded.enabled').run(mode, Number(enabled));
+      const modes = this.enabledModes();
+      if (!modes.length) throw new AccountError(400, 'LAST_GAME');
+      this.db.prepare('INSERT INTO admin_audit VALUES (?,?,?,?,?)').run(randomUUID(), actor, `game-enabled:${enabled}`, mode, Date.now());
+      return modes;
+    })();
   }
   leaderboard(): PublicProfile[] {
     return (this.db.prepare('SELECT id FROM users WHERE matches>0 ORDER BY points DESC, wins DESC, id LIMIT 100').all() as { id: string }[])
@@ -331,12 +395,14 @@ export class AccountStore {
     })();
   }
   roles(id: string): ProfileRole[] {
-    return (this.db.prepare('SELECT role FROM user_roles WHERE user_id=? ORDER BY role').all(id) as { role: string }[])
-      .map(r => r.role).filter((role): role is ProfileRole => PROFILE_ROLES.includes(role as ProfileRole));
+    const roles = (this.db.prepare('SELECT role FROM user_roles WHERE user_id=? ORDER BY role').all(id) as { role: string }[])
+      .map(r => r.role).filter((role): role is ProfileRole => role !== 'club' && PROFILE_ROLES.includes(role as ProfileRole));
+    if (this.db.prepare('SELECT 1 FROM users u JOIN club_emails c ON c.email=u.verified_email WHERE u.id=?').get(id)) roles.push('club');
+    return roles;
   }
   setRoles(adminId: string, userId: string, value: unknown): void {
     const actor = this.adminAuth.requireHash(adminId);
-    if (!Array.isArray(value) || value.length > 2 || value.some(role => !PROFILE_ROLES.includes(role)) ||
+    if (!Array.isArray(value) || value.length > 2 || value.some(role => role === 'club' || !PROFILE_ROLES.includes(role)) ||
       value.filter(role => String(role).startsWith('sponsor_')).length > 1 || new Set(value).size !== value.length) {
       throw new AccountError(400, 'ROLES_INVALID');
     }

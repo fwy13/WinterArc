@@ -1,10 +1,8 @@
 import { createStore } from '../hooks/useStore';
 import type { AccountConfig, AccountProfile } from 'winterarc-profile';
 
-const endpoint = new URL(import.meta.env.VITE_SERVER_URL ||
-  (import.meta.env.DEV ? `${location.protocol}//${location.hostname}:2567` : location.origin));
-endpoint.protocol = ['https:', 'wss:'].includes(endpoint.protocol) ? 'https:' : 'http:';
-export const apiBase = `${endpoint.href.replace(/\/$/, '')}/api`;
+export { apiBaseUrl as apiBase } from '../config/endpoints';
+import { apiBaseUrl as apiBase } from '../config/endpoints';
 export const account = createStore<AccountProfile | null>(null);
 export const rewardPresentationBusy = createStore(false);
 let queuedProfile: AccountProfile | null = null;

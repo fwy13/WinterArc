@@ -18,6 +18,9 @@ export class PlayerState extends Schema {
   x = 0;
   y = 3;
   z = -14;
+  launchPower = 0;
+  vx = 0;
+  vz = 0;
   vy = 0;
   yaw = 0;
   pitch = 0;
@@ -48,6 +51,9 @@ defineTypes(PlayerState, {
   x: 'float32',
   y: 'float32',
   z: 'float32',
+  launchPower: 'uint8',
+  vx: 'float32',
+  vz: 'float32',
   vy: 'float32',
   yaw: 'float32',
   pitch: 'float32',
@@ -135,6 +141,9 @@ export class WinterState extends Schema implements RoomState {
   tournamentRounds = 0;
   tournamentCompleted = 0;
   resultMode: GameId = 'hunt';
+  knockoutStage = 'aim';
+  knockoutRemaining = 10;
+  knockoutTurn = 1;
   iceRadius = 18;
   iceShrinkIn = 15;
   mode: GameId = 'hunt';
@@ -171,6 +180,7 @@ defineTypes(WinterState, {
   tournamentCapacity: 'uint8',
   tournamentId: 'string', tournamentTitle: 'string', tournamentRounds: 'uint8', tournamentCompleted: 'uint8',
   resultMode: 'string',
+  knockoutStage: 'string', knockoutRemaining: 'float32', knockoutTurn: 'uint16',
   iceRadius: 'float32',
   iceShrinkIn: 'float32',
   privateRoom: 'boolean',

@@ -1,8 +1,25 @@
+import { clubVi } from './club';
+import { hudVi } from './hud';
 import { shopVi } from './shop';
 import { adminVi } from './admin';
 import { socialVi } from './social';
 import { accountVi } from './account';
 export const vi = {
+  "account.error.EMAILS_LIMIT": "Tối đa 1.000 email CLB.",
+  "social.role.club": "Thành viên CLB",
+  "games.knockout.title": "Knockout",
+  "games.knockout.tag": "NGƯỜI TUYẾT · ĐẨY ĐỐI THỦ",
+  "games.knockout.description": "Giữ thăng bằng. Đẩy đối thủ khỏi sân băng!",
+  "games.knockout.help": "Xoay góc nhìn để ngắm, Q/E hoặc thanh lực để chọn mức 1–10. Hết đếm ngược, mũi tên được công bố và tất cả cùng lao đi. Sân thu hẹp sau mỗi lượt; người trụ lại cuối cùng thắng.",
+  "ingame.knockout.label": "Đấu trường người tuyết",
+  "ingame.knockout.hint": "Chọn hướng · Chọn lực · Chờ hết đếm ngược",
+  "account.error.MODE_DISABLED": "Game này đang tạm đóng. Hãy chọn game khác.",
+  "account.error.PLAYER_CONFLICT": "Thông số đã thay đổi. Chọn lại người chơi để tải số dư mới.",
+  "account.error.ECONOMY_INVALID": "Kiểm tra token, lượt quay và lý do chỉnh sửa.",
+  "account.error.EMAILS_INVALID": "Danh sách email chưa hợp lệ.",
+  "account.error.LAST_GAME": "Cần giữ ít nhất một game đang mở.",
+
+  'knockout.push': 'Đẩy',
   'room.random': 'Ngẫu nhiên mỗi trận',
   'room.randomHint': 'Server tự chọn mode khi bắt đầu trận và tránh lặp lại mode của trận vừa chơi. Tắt để tự chọn.',
   'settings.skyQuality': 'Bầu trời cực quang',
@@ -24,6 +41,8 @@ export const vi = {
   ...socialVi,
   ...adminVi,
   ...shopVi,
+  ...hudVi,
+  ...clubVi,
   "settings.editor": "Xưởng xây map",
   "settings.title": "Cài đặt",
   "settings.volume": "Âm lượng tổng",

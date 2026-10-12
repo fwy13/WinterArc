@@ -1,3 +1,4 @@
+import { ClubSocials } from './components/ClubBrand';
 import ShopPanel from './shop/ShopPanel';
 import { startSettingsSync } from './account/SettingsSync';
 import AccountPanel from './account/AccountPanel';
@@ -6,7 +7,6 @@ import ProfileName from './account/ProfileName';
 import LandscapeGate from './components/LandscapeGate';
 import SpectatorControls, { type SpectatorOptions } from './components/SpectatorControls';
 import SettingsPanel from './components/SettingsPanel';
-import ModeHint from './components/ModeHint';
 import { settings, updateSettings } from './config/settings';
 import { renderFps } from './engine/RenderStats';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -24,7 +24,7 @@ import MobileControls from './components/MobileControls';
 import { useTouchControls } from './hooks/useTouchControls';
 import HelpPanel from './components/HelpPanel';
 import InformationPanel from './components/InformationPanel';
-import { primary, secondary, panel } from './components/ui';
+import { primary, secondary } from './components/ui';
 
 interface Notice {
   id: number;
@@ -418,10 +418,10 @@ export default function App() {
         >
           {meAccount ? <ProfileName player={meAccount} showRoles={false} /> : t('account.login')}
         </button>
-        <div className="pointer-events-auto ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className={`pointer-events-auto ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 ${compactPlay ? 'match-tools' : ''}`}>
           {compactPlay && (
             <output
-              className="pointer-events-none paper-tab px-2 py-1.5 font-mono text-[10px] tabular-nums sm:text-xs"
+              className="pointer-events-none match-stats"
               aria-label="FPS / ping"
             >
               {fps} FPS · {status === 'online' ? `${ping} ms` : '— ms'}
@@ -441,7 +441,7 @@ export default function App() {
             </span>
           </button>
           <button
-            className="paper-tab grid size-11 shrink-0 place-items-center text-lg"
+            className={compactPlay ? 'match-settings' : 'paper-tab grid size-11 shrink-0 place-items-center text-lg'}
             aria-label={t('settings.title')}
             title={t('settings.title')}
             onClick={() => {
@@ -517,10 +517,7 @@ export default function App() {
       )}
       {snap && snap.phase !== 'lobby' && (
         <>
-          {snap.phase !== 'finished' && <GameHud state={snap} candidate={candidate} />}
-          {!paused && !snap.players.find((p) => p.id === snap.selfId)?.observer && (
-            <ModeHint state={snap} />
-          )}
+          {['playing', 'countdown'].includes(snap.phase) && <GameHud state={snap} candidate={candidate} />}
           {touchControls &&
             snap.phase === 'playing' &&
             status === 'online' &&
@@ -528,7 +525,7 @@ export default function App() {
             !help &&
             !information &&
             snap.players.some(
-              (p) => p.id === snap.selfId && !p.out && !p.qualified && p.hp > 0,
+              (p) => p.id === snap.selfId && !p.observer && !p.out && !p.qualified && p.hp > 0,
             ) && (
               <MobileControls
                 key={`${snap.roomId}:${snap.round}`}
@@ -550,12 +547,12 @@ export default function App() {
               />
             )}
           {snap.phase === 'countdown' && (
-            <div className="pointer-events-none fixed inset-0 z-30 grid place-content-center bg-fir/10 text-center">
-              <p className="text-xs tracking-[0.2em] text-fir">{t('hud.countdown')}</p>
-              <strong className="my-2 text-6xl sm:my-5 sm:text-9xl font-black tabular-nums text-ink drop-shadow-[2px_2px_0_#fff8e8]">
+            <div className="match-countdown">
+              <p>{t('hud.countdown')}</p>
+              <strong>
                 {snap.countdown || t('hud.go')}
               </strong>
-              <p className="text-lg font-semibold">{t(`games.${snap.mode}.title`)}</p>
+              <h2>{t(`games.${snap.mode}.title`)}</h2>
             </div>
           )}
           {(snap.phase === 'finished' || snap.phase === 'intermission') && (
@@ -574,10 +571,11 @@ export default function App() {
             !touchControls &&
             !help &&
             !information &&
+            !snap.players.find((p) => p.id === snap.selfId)?.observer &&
             !snap.players.find((p) => p.id === snap.selfId)?.out &&
             !snap.players.find((p) => p.id === snap.selfId)?.qualified && (
               <button
-                className={`${primary} fixed bottom-52 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap`}
+                className="match-focus"
                 onClick={resume}
               >
                 {t('hud.focus')}
@@ -590,14 +588,14 @@ export default function App() {
             !settingsOpen &&
             !accountOpen &&
             !shopOpen && (
-              <div className="fixed inset-0 z-30 grid place-items-center bg-fir/25 p-4 ">
+              <div className="match-pause">
                 <section
-                  className={`${panel} w-full max-w-md max-h-[calc(100dvh-6rem)] overflow-y-auto max-sm:!p-4`}
+                  className="match-pause-card"
                 >
                   <h2 className="font-note text-2xl font-bold">
                     {status === 'reconnecting' ? t('notice.reconnecting') : t('pause.title')}
                   </h2>
-                  <p className="my-4 text-sm leading-6 text-ink/80">{t('pause.hint')}</p>
+                  <p className="my-4 text-sm leading-6 opacity-80">{t('pause.hint')}</p>
                   <label className="my-5 flex items-center gap-3 text-sm">
                     {t('common.volume')}
                     <input
@@ -632,6 +630,7 @@ export default function App() {
       {showPreview && (
         <footer className="relative z-10 mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 pb-6 text-xs text-ink/65 sm:px-10">
           <p>{t('app.copyright')}</p>
+          <ClubSocials />
         </footer>
       )}
       {settingsOpen && (
@@ -668,7 +667,9 @@ export default function App() {
       )}
       <div
         className={
-          touchControls
+          compactPlay
+            ? `match-notices ${touchControls ? 'match-notices--touch' : ''}`
+            : touchControls
             ? 'pointer-events-none fixed left-1/2 top-[calc(max(0.5rem,env(safe-area-inset-top))+7rem)] z-[60] w-fit max-w-[65vw] -translate-x-1/2 [&>div:not(:last-child)]:hidden [&>div]:px-2 [&>div]:py-1 [&>div]:text-[10px]'
             : 'pointer-events-none fixed bottom-4 right-4 z-[60] flex max-w-[min(90vw,400px)] flex-col gap-2'
         }
@@ -676,7 +677,7 @@ export default function App() {
         aria-live="polite"
       >
         {notices.map((item) => (
-          <div key={item.id} className="paper-tab px-5 py-3 text-sm text-fir">
+          <div key={item.id} className={compactPlay ? 'match-toast' : 'paper-tab px-5 py-3 text-sm text-fir'}>
             {item.text}
           </div>
         ))}

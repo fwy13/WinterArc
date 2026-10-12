@@ -1,7 +1,8 @@
+import { useEnabledGames } from '../config/gameAvailability';
 import TournamentBoard from './TournamentBoard';
 import ProfileName from '../account/ProfileName';
-import { GAME_DEFINITIONS, MAX_PLAYERS } from 'winterarc-gameplay';
-import { type GameId, type ModeSelection, type MatchFormat } from 'winterarc-core';
+import { MAX_PLAYERS } from 'winterarc-gameplay';
+import { type ModeSelection, type MatchFormat } from 'winterarc-core';
 import { type Snapshot } from 'winterarc-protocol';
 import { useI18n } from '../i18n';
 import { panel, eyebrow, primary, secondary, field, PaperHolly } from './ui';
@@ -23,6 +24,7 @@ export default function Lobby({
   onFormat,
   onMode,
 }: Props) {
+  const enabledModes = useEnabledGames();
   const { t } = useI18n(),
     me = s.players.find((p) => p.id === s.selfId),
     host = s.hostId === s.selfId;
@@ -46,10 +48,10 @@ export default function Lobby({
                 onChange={(e) => onFormat(e.target.value as MatchFormat)}
               >
                 <option value="solo">{t('format.solo')}</option>
-                <option value="squad">{t('format.squad')}</option>
+                <option value="squad" disabled={s.mode === 'knockout'}>{t('format.squad')}</option>
               </select>
             </label>
-            <p className="text-xs leading-6 text-ink/65">{t(`format.${s.format}Help`)}</p></>
+            </>
         <label className="mt-4 block text-sm" htmlFor="lobby-mode">
           {t('match.mode')}
         </label>
@@ -61,14 +63,13 @@ export default function Lobby({
           onChange={(e) => onMode(e.target.value as ModeSelection)}
         >
           <option value="random">{t('room.random')}</option>
-          {(Object.keys(GAME_DEFINITIONS) as GameId[]).map((mode) => (
+          {enabledModes.map((mode) => (
             <option key={mode} value={mode}>
               {t(`games.${mode}.title`)}
             </option>
           ))}
         </select>
         <p className="mt-3 text-xs text-fir">{t(s.privateRoom ? 'room.private' : 'room.public')}</p>
-        {s.privateRoom && <p className="mt-1 text-xs text-ink/65">{t('room.shareHint')}</p>}
         <div className="my-6 flex flex-wrap items-center justify-between gap-3 rounded-sm bg-ink/5 p-4">
           <div>
             <p className="text-xs text-ink/65">{t('lobby.room')}</p>

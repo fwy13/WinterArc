@@ -4,8 +4,7 @@ import { accounts } from './account/AccountStore.js';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
-import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import express from 'express';
 import { Server, matchMaker } from '@colyseus/core';
 import { TOURNAMENT_ROOM } from 'winterarc-protocol';
@@ -25,6 +24,13 @@ export async function startServer(port = Number(process.env.PORT || 2567)): Prom
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.ALLOWED_ORIGINS || !allowed.length) throw new Error('ALLOWED_ORIGINS is required in production');
+    for (const origin of allowed) {
+      const url = new URL(origin);
+      if (url.protocol !== 'https:' || url.origin !== origin) throw new Error('Use exact HTTPS frontend origins without trailing slashes in ALLOWED_ORIGINS');
+    }
+  }
   const checkOrigin = (origin: string | undefined): boolean =>
     !origin || allowed.includes(origin);
   app.use((req, res, next) => {
@@ -78,7 +84,7 @@ export async function startServer(port = Number(process.env.PORT || 2567)): Prom
     try {
       const rooms = await matchMaker.query({ name: TOURNAMENT_ROOM, private: false });
       res.json(
-        rooms.slice(0, 100).map((room) => ({
+        rooms.filter(room => room.metadata?.modeSelection === 'random' || accounts().enabledModes().includes(room.metadata?.mode ?? 'hunt')).slice(0, 100).map((room) => ({
           roomId: room.roomId,
           clients: room.clients,
           maxClients: room.maxClients,
@@ -94,12 +100,6 @@ export async function startServer(port = Number(process.env.PORT || 2567)): Prom
       res.status(503).json({ error: 'Room list unavailable' });
     }
   });
-  const here = dirname(fileURLToPath(import.meta.url));
-  const dist = resolve(here, '../../web/dist');
-  if (existsSync(dist)) {
-    app.use(express.static(dist));
-    app.get(['/', '/admin', '/admin/', '/editor', '/editor/'], (_req, res) => res.sendFile(resolve(dist, 'index.html')));
-  }
   await gameServer.listen(port, '0.0.0.0');
   const address = http.address() as AddressInfo;
   console.log(`❄ Server WinterArc: http://localhost:${address.port}`);

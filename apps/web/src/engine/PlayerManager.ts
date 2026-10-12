@@ -47,7 +47,7 @@ export class PlayerManager {
       this.audio.stopPlayer(id);
     }
   }
-  reconcile(me: PlayerSnapshot, world: VoxelWorld, frozen: boolean): void {
+  reconcile(me: PlayerSnapshot, world: VoxelWorld, frozen: boolean, syncCamera = true): void {
     if (
       this.local &&
       Math.hypot(this.local.x - me.x, this.local.y - me.y, this.local.z - me.z) > 8
@@ -61,12 +61,14 @@ export class PlayerManager {
       x: me.x,
       y: me.y,
       z: me.z,
-      vy: me.vy,
+      vy: me.vy, vx: me.vx || 0, vz: me.vz || 0,
       yaw: me.yaw,
       pitch: me.pitch,
     };
     for (const cmd of this.pending) movePlayer(this.local, cmd, world);
-    this.noa.ents.setPosition(this.noa.playerEntity, [this.local.x, this.local.y, this.local.z]);
+    // Third-person modes own the camera carrier in their render loop. Network
+    // reconciliation must only update the authoritative pose in that case.
+    if (syncCamera) this.noa.ents.setPosition(this.noa.playerEntity, [this.local.x, this.local.y, this.local.z]);
   }
   predict(cmd: InputCommand, world: VoxelWorld): void {
     if (!this.local) return;
@@ -112,8 +114,8 @@ export class PlayerManager {
         this.avatars.set(p.id, a);
       }
       a.target = p;
-      const labels = p.roles.filter((role): role is ProfileRole => PROFILE_ROLES.includes(role as ProfileRole)).map(role => t(`social.role.${role}`));
-      a.nameplate.setName(labels.length ? `${p.name} · ${labels.join(' / ')}` : p.name, p.premium);
+      const labels = p.roles.filter((role): role is ProfileRole => role !== 'club' && PROFILE_ROLES.includes(role as ProfileRole)).map(role => t(`social.role.${role}`));
+      a.nameplate.setName(labels.length ? `${p.name} · ${labels.join(' / ')}` : p.name, p.premium, p.roles.includes('club'));
       const visible = active && !p.observer && p.connected && p.hp > 0 && !p.out;
 
       a.root.setEnabled(visible);

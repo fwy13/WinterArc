@@ -9,6 +9,8 @@ export function validInput(value: unknown): value is InputCommand {
 function validateTyped(v: InputCommand): boolean {
   return (
     v &&
+    (v.knockoutPower === undefined || (Number.isInteger(v.knockoutPower) && v.knockoutPower >= 1 && v.knockoutPower <= 10)) &&
+    (v.knockoutTurn === undefined || (Number.isSafeInteger(v.knockoutTurn) && v.knockoutTurn >= 1 && v.knockoutTurn <= 65535)) &&
     Number.isSafeInteger(v.round) &&
     v.round >= 0 &&
     Number.isSafeInteger(v.seq) &&

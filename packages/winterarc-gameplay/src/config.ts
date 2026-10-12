@@ -1,6 +1,7 @@
 export const MAX_PLAYERS = 32;
 export const HUNT_GOAL = 6;
 export const GAME_DEFINITIONS = {
+  knockout: { id: 'knockout', duration: 180, accent: '#aeefff' },
   hunt: { id: 'hunt', duration: 240, accent: '#bbebd2' },
   colorfall: { id: 'colorfall', duration: 140, accent: '#eac4fb' },
   giftrace: { id: 'giftrace', duration: 180, accent: '#f9c780' },

@@ -1,14 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Snowburst+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&family=Snowburst+One&display=swap');
 @import 'tailwindcss';
+@import './club-theme.css';
 @theme {
-  --font-note: 'Patrick Hand', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Noto Sans', cursive;
-  --color-paper: #fff8e8;
-  --color-paper-light: #fffdf4;
-  --color-paper-dark: #e9dec2;
-  --color-ink: #303b38;
-  --color-fir: #315943;
-  --color-berry: #a83e40;
-  --font-sans: 'Segoe UI', 'Noto Sans', system-ui, sans-serif;
+  --font-note: 'Open Sans', 'Segoe UI', sans-serif;
+  --color-paper: #edf8fc;
+  --color-paper-light: #ffffff;
+  --color-paper-dark: #dcecf6;
+  --color-ink: #023263;
+  --color-fir: #023263;
+  --color-berry: #1366ab;
+  --font-sans: 'Open Sans', 'Segoe UI', 'Noto Sans', system-ui, sans-serif;
   --color-winter-950: #071d26;
   --color-winter-900: #103440;
   --color-mint: #bde8d1;
@@ -19,8 +20,8 @@
   }
   body {
     margin: 0;
-    background: #fff8e8;
-    color: #303b38;
+    background: #edf8fc;
+    color: #023263;
   }
 }
 .font-snowburst-one-regular {
@@ -42,7 +43,7 @@
   border: 1.5px solid var(--color-ink);
   border-radius: 2px 5px 3px 2px;
   box-shadow:
-    5px 6px 0 #55716b,
+    5px 6px 0 #9ae5db,
     6px 7px 0 var(--color-ink);
 }
 @utility paper-tab {
@@ -50,7 +51,7 @@
   background-color: var(--color-paper);
   border: 1.5px solid var(--color-ink);
   border-radius: 2px;
-  box-shadow: 3px 3px 0 #55716b;
+  box-shadow: 3px 3px 0 #9ae5db;
 }
 @utility paper-tape {
   &::before {
@@ -61,8 +62,8 @@
     left: 25px;
     width: 60px;
     height: 18px;
-    background: repeating-linear-gradient(135deg, #a83e40b3 0 7px, #fff8e8cc 7px 14px);
-    border: 1px solid #303b3826;
+    background: repeating-linear-gradient(135deg, #1366abb3 0 7px, #edf8fccc 7px 14px);
+    border: 1px solid #02326326;
     transform: rotate(-4deg);
   }
 }

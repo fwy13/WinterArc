@@ -1,3 +1,4 @@
+import { apiBaseUrl, websocketUrl } from '../config/endpoints';
 import { accessTicket, refreshAccount, account } from '../account/service';
 import { Client, type Room } from 'colyseus.js';
 import { t, translateNotice } from '../i18n';
@@ -61,19 +62,8 @@ export class NetworkService {
   onNotice: (message: string) => void = () => {};
 
   constructor() {
-    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-    const endpoint =
-      import.meta.env.VITE_SERVER_URL ||
-      (import.meta.env.DEV
-        ? `${protocol}://${location.hostname}:2567`
-        : `${protocol}://${location.host}`);
-    this.client = new Client(endpoint);
-    const url = new URL(endpoint);
-    url.protocol = url.protocol === 'wss:' || url.protocol === 'https:' ? 'https:' : 'http:';
-    url.pathname = `${url.pathname.replace(/\/$/, '')}/api/rooms`;
-    url.search = '';
-    url.hash = '';
-    this.roomsUrl = url.href;
+    this.client = new Client(websocketUrl);
+    this.roomsUrl = `${apiBaseUrl}/rooms`;
   }
 
   async listRooms(signal?: AbortSignal): Promise<PublicRoom[]> {
@@ -130,6 +120,7 @@ export class NetworkService {
         tournamentRounds: s.tournamentRounds,
         tournamentCompleted: s.tournamentCompleted,
         resultMode: s.resultMode,
+        knockout: { stage: s.knockoutStage, remaining: s.knockoutRemaining, turn: s.knockoutTurn },
         ice: { radius: s.iceRadius, shrinkIn: s.iceShrinkIn },
         privateRoom: s.privateRoom,
         roomId: room.roomId,
@@ -177,7 +168,8 @@ export class NetworkService {
           x: p.x,
           y: p.y,
           z: p.z,
-          vy: p.vy,
+          launchPower: p.launchPower,
+          vy: p.vy, vx: p.vx || 0, vz: p.vz || 0,
           yaw: p.yaw,
           pitch: p.pitch,
           ack: p.ack,

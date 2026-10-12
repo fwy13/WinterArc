@@ -1,3 +1,4 @@
+import { knockoutControls, knockoutPower, adjustKnockoutPower } from './KnockoutInput';
 import { settings } from '../config/settings';
 import { touchInput, clearTouchInput } from './TouchInput';
 import type { Engine } from 'noa-engine';
@@ -26,6 +27,9 @@ export class InputManager {
           return;
         }
         if (!this.enabled) return;
+        if (knockoutControls.enabled && (e.code === 'KeyQ' || e.code === 'KeyE')) {
+          e.preventDefault(); if (!e.repeat) adjustKnockoutPower(knockoutPower.get() + (e.code === 'KeyE' ? 1 : -1)); return;
+        }
         if (
           [
             'KeyW',

@@ -1,11 +1,13 @@
 import type { GameId } from 'winterarc-core';
 import type { RoundContext, RoundController } from './RoundContext.js';
+import { KnockoutRound } from './KnockoutRound.js';
 import { HuntRound } from './HuntRound.js';
 import { ColorFallRound } from './ColorFallRound.js';
 import { GiftRaceRound } from './GiftRaceRound.js';
 import { CrabRound } from './CrabRound.js';
 import { IceBreakRound } from './IceBreakRound.js';
 const factories: Record<GameId, (context: RoundContext) => RoundController> = {
+  knockout: (c) => new KnockoutRound(c),
   hunt: (c) => new HuntRound(c),
   colorfall: (c) => new ColorFallRound(c),
   giftrace: (c) => new GiftRaceRound(c),

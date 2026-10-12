@@ -3,12 +3,14 @@ import { importedMaps } from './maps/generated.js';
 import type { GameId } from 'winterarc-core';
 import { ChristmasVillageBuilder } from './ChristmasVillageBuilder.js';
 import { SnowIslandBuilder } from './SnowIslandBuilder.js';
+import { KnockoutBuilder } from './KnockoutBuilder.js';
 import { IceBreakBuilder } from './IceBreakBuilder.js';
 import { ColorFallBuilder } from './ColorFallBuilder.js';
 import { GiftRaceBuilder } from './GiftRaceBuilder.js';
 import type { VoxelWorld } from './VoxelWorld.js';
 export class WorldFactory {
   private static readonly builders: Record<GameId, () => VoxelWorld> = {
+    knockout: () => new KnockoutBuilder().build(),
     hunt: () => new ChristmasVillageBuilder().build(),
     colorfall: () => new ColorFallBuilder().build(),
     giftrace: () => new GiftRaceBuilder().build(),

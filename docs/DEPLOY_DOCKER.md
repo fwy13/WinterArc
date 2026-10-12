@@ -1,162 +1,156 @@
-# Backend Docker + Nginx
+# Production: Vercel frontend + VPS backend
 
-Bản vá áp dụng sau v6.10.1. Frontend vẫn deploy riêng trên Vercel; image không chứa
-web hoặc editor. Một process Colyseus giữ phòng trong RAM, SQLite nằm trên volume.
-Không scale nhiều replica server với cấu hình này.
+Áp dụng patch này sau `winterarc-itclub-brand.patch`.
 
-## 1. Chạy backend bằng IP
+## Kiến trúc
 
-Máy chủ cần Docker Engine và Docker Compose v2. Tại gốc repository:
+- `game.example.com`: Vercel phục vụ React/Vite và asset game từ CDN.
+- `api.example.com`: Nginx TLS trên VPS → service `server:2567` trong Docker.
+- HTTP API, Colyseus matchmaking và WebSocket đi trực tiếp từ browser tới backend.
+- SQLite nằm trong volume `winterarc_accounts`. Giữ một replica backend vì room
+  ở RAM và SQLite dùng chung trên máy này. Không scale nhiều process tùy ý.
+- Không chuyển WebSocket qua Vercel, không build frontend/editor trong image VPS.
 
-```bash
-cp deploy/.env.example .env
-```
+Giữ thư mục `apps/*` và `packages/*` vì client/server cần dùng chung protocol,
+map và gameplay. Cấu hình vận hành tập trung trong `deploy/`; hai file compose
+ở root để đường dẫn và volume cũ được giữ ổn định.
 
-Nếu đã có `.env`, hãy gộp các biến thay vì ghi đè. Sửa ALLOWED_ORIGINS thành origin
-frontend thực tế, ví dụ `https://winterarc-demo.vercel.app`. Đây KHÔNG phải URL backend.
-Không thêm dấu `/` cuối, path, wildcard hay dấu nháy quanh từng origin.
+## 1. DNS và môi trường
 
-```bash
-docker compose up -d --build
-docker compose logs -f server nginx
-curl http://IP_VPS/health
-```
-
-HTTP mặc định ở cổng 80; đổi HTTP_PORT nếu cổng đang được dùng. Backend 2567 chỉ có
-trong mạng Docker, không publish ra Internet. Mở cổng 80 ở firewall VPS/router.
-`/` có thể trả 404 vì image chỉ chứa backend; dùng `/health` để kiểm tra.
-
-**HTTP bằng IP chỉ giúp kiểm tra API/proxy, chưa phải cấu hình đăng nhập/chơi hoàn
-chỉnh cho frontend HTTPS ở Vercel.** Cookie production vẫn giữ Secure. Không đổi
-NODE_ENV sang development để gửi cookie đăng nhập không mã hóa qua Internet.
-
-Nếu VPS RAM thấp, build image trên máy khác cùng kiến trúc rồi chuyển image lên VPS.
-Compiler/native dependency build có thể cần nhiều RAM hơn lúc chạy game.
-
-## 2. Google login và IP
-
-Google Identity Services yêu cầu Authorized JavaScript origin là hostname HTTPS;
-IP công cộng không hợp lệ, localhost/loopback là ngoại lệ phát triển. Do đó:
-
-- Người chơi mở `http://IP_VPS`: không dùng origin đó để đăng nhập Google web.
-- Người chơi mở `https://TEN.vercel.app`: có thể đăng ký origin chính xác đó với Google.
-- Backend không phải origin hiển thị nút Google. Backend vẫn có thể chạy trên VPS,
-  nhưng trình duyệt cần kết nối HTTPS/WSS tin cậy tới nó để dùng với frontend HTTPS.
-- HTTPS frontend gọi HTTP/WS backend bị vấn đề mixed content. Thêm ALLOWED_ORIGINS
-  chỉ xử lý CORS, không sửa mixed content hoặc chính sách cookie.
-- Nếu backend dùng HTTPS cho IP với chứng chỉ IP hợp lệ, hạn chế Google origin vẫn
-  áp dụng cho frontend. Backend IP không tự động giải quyết cookie cross-site.
-
-Luồng hiện tại nhận ID token từ nút Google bằng callback JavaScript rồi gửi tới
-`/api/auth/google`; không phải OAuth redirect callback tới backend. Đặt cùng
-GOOGLE_CLIENT_ID trong backend với client Web application đã tạo. Authorized
-JavaScript origins chứa URL frontend (không wildcard), ví dụ:
-
-```text
-https://TEN.vercel.app
-http://localhost:5173
-```
-
-Không cần thêm `/api/auth/google` làm redirect URI cho luồng callback JS hiện tại.
-
-## 3. HTTPS khi có hostname và certificate
-
-Cấu hình phù hợp nhất với cookie hiện tại:
-
-- `https://play.example.com`: frontend Vercel.
-- `https://api.example.com`: DNS trỏ VPS, Nginx cấp HTTPS/WSS.
-- ALLOWED_ORIGINS=https://play.example.com
-- COOKIE_SAME_SITE=lax
-- VITE_SERVER_URL=wss://api.example.com trên Vercel, sau đó redeploy frontend.
-
-Có thể dùng hostname được cấp miễn phí thay vì mua domain; vẫn cần cấu hình DNS,
-origin được Google chấp nhận và certificate tin cậy. Hai hostname không cùng site
-thì áp dụng mục cookie cross-site bên dưới.
-
-Đặt chứng chỉ và private key do bạn cấp vào:
-
-```text
-deploy/certs/fullchain.pem
-deploy/certs/privkey.pem
-```
-
-Patch không tự xin chứng chỉ, không có chứng chỉ tự ký và không chứa private key.
-Mở firewall cổng 443; dùng cổng HTTPS chuẩn 443 với redirect mẫu.
+Cần Docker Engine + Compose v2 (có BuildKit), một tên miền và quyền quản lý DNS.
+Trỏ A `api.example.com` tới IP VPS. Chỉ thêm AAAA khi IPv6 thực sự hoạt động.
+Mở TCP 80/443 ở firewall VPS; không publish cổng 2567.
 
 ```bash
-docker compose -f compose.yml -f compose.https.yml up -d --build
+cp .env.example .env
 ```
 
-Khi gia hạn chứng chỉ, thay file trong thư mục trên rồi reload Nginx:
-
-```bash
-docker compose -f compose.yml -f compose.https.yml exec nginx nginx -s reload
-```
-
-Dùng cùng hai `-f` cho các lệnh cập nhật deployment HTTPS. Nginx chuyển tiếp cả
-HTTP matchmaking Colyseus, `/api`, `/health` và WebSocket. Docker DNS được resolve
-lại để upstream theo được IP container mới sau recreate.
-
-## 4. Frontend Vercel và backend khác site
-
-Nếu giữ `TEN.vercel.app` và API ở domain khác, cookie mặc định SameSite=Lax không
-được gửi trong fetch cross-site. Patch thêm tùy chọn:
+Sửa `.env` trên VPS:
 
 ```dotenv
-COOKIE_SAME_SITE=none
+API_DOMAIN=api.example.com
+ALLOWED_ORIGINS=https://game.example.com
+GOOGLE_CLIENT_ID=YOUR_WEB_CLIENT_ID.apps.googleusercontent.com
+COOKIE_SAME_SITE=lax
+ADMIN_USERNAME=your-admin
+ADMIN_PASSWORD_HASH='$2b$...'
 ```
 
-Chỉ dùng với HTTPS; cookie vẫn có Secure, HttpOnly. Exact-Origin và X-WinterArc
-vẫn được kiểm tra trên các API ghi. Tuy nhiên trình duyệt có thể chặn cookie bên
-thứ ba: `SameSite=None` không đảm bảo đăng nhập hoạt động ở mọi trình duyệt.
-Cùng site qua hai subdomain của domain bạn kiểm soát tránh được phụ thuộc này.
-Không tắt bảo vệ trình duyệt hoặc CORS để xử lý lỗi đăng nhập.
+Hash admin lấy bằng lệnh `npm run admin:hash -w @winterarc/server` trên máy dev.
+Giữ dấu nháy đơn quanh bcrypt hash để `$` không bị Compose nội suy. Không commit
+`.env`, DB, backup hoặc private key. Biến server không được đặt trong biến `VITE_*`.
 
-## 5. Admin và dữ liệu
+Nếu cổng 80/443 đã do Nginx/Docker khác dùng, không chạy stack mới đè cổng: dùng
+reverse proxy hiện có hoặc dành IP/cổng phù hợp. Hướng dẫn này giả định 80/443 trống.
 
-Điền ADMIN_USERNAME và bcrypt hash vào `.env`. Có thể tạo hash bằng lệnh cũ trên
-máy phát triển: `npm run admin:hash --workspace=apps/server`. Lưu hash trong nháy đơn
-ở `.env`, ví dụ `ADMIN_PASSWORD_HASH='$2b$12$...'`, để dollar sign không bị nội suy.
-Không đặt mật khẩu/hash vào Dockerfile, biến VITE_* hoặc commit `.env`.
+## 2. Khởi động backend và cấp HTTPS lần đầu
 
-SQLite dùng `/data/accounts.sqlite` trong named volume `winterarc_accounts`.
-Restart/rebuild không xóa tài khoản. Không chạy `docker compose down -v` trừ khi
-chủ động muốn xóa dữ liệu. TRUST_PROXY=1 chỉ tin một hop Nginx, và cổng server
-không publish ra ngoài; Nginx ghi đè X-Forwarded-For bằng IP của peer.
-
-Để backup nhất quán cả DB/WAL, dừng server rồi sao lưu volume:
+Thay tên miền/email trong lệnh certbot bên dưới bằng thông tin của bạn:
 
 ```bash
-docker compose stop server
-mkdir -p backups
-docker compose run --rm --no-deps --user root --entrypoint tar server \
-  -C /data -czf - . > backups/accounts.tar.gz
-docker compose start server
+docker compose config --quiet
+docker compose up -d --build server nginx
+docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
+  --cert-name api.example.com -d api.example.com \
+  --email admin@example.com --agree-tos --no-eff-email
+docker compose -f compose.yml -f compose.https.yml up -d nginx
+curl --fail https://api.example.com/health
 ```
 
-Với deployment HTTPS, thêm hai `-f` như mục 3. Lưu bản backup ngoài VPS. Restart
-server làm mất các phòng đang nằm trong RAM, nên cập nhật khi không còn trận chơi.
+Bước bootstrap chỉ mở ACME challenge và chuyển hướng HTTP → HTTPS. API bắt đầu
+hoạt động công khai sau bước bật `compose.https.yml`. Chứng chỉ được lưu trong
+volume `winterarc_certificates`, không cần chép PEM thủ công.
 
-## 6. Cập nhật
+Gia hạn: thêm vào crontab trên VPS (đổi đường dẫn tuyệt đối):
+
+```cron
+17 3,15 * * * /bin/sh /opt/winterarc/deploy/scripts/renew-cert.sh >> /var/log/winterarc-cert.log 2>&1
+```
+
+Thử cơ chế challenge trước:
 
 ```bash
-docker compose up -d --build server
-docker compose restart nginx
+docker compose run --rm certbot renew --dry-run
 ```
 
-Dùng cả hai file compose nếu đang chạy HTTPS. Frontend và backend cần cùng phiên
-bản protocol, nhất là sau patch modeSelection.
+Script kiểm tra Nginx rồi reload sau khi renew thành công; reload giữ kết nối
+đang hoạt động. Cron không tự được cài khi áp dụng patch.
 
-Dockerfile tạo manifest backend riêng và cài dependencies từ version range đang
-có trong apps/server/package.json. Nó chưa sử dụng lockfile gốc vì source repomix
-không cung cấp lockfile; build giữa các thời điểm có thể lấy dependency khác nhau.
-Khi cần build tái lập tuyệt đối, bổ sung lockfile phù hợp và pin image digest.
+## 3. Deploy frontend Vercel
 
-Không chạy Docker build, cài npm hoặc test trong quá trình tạo bản vá này.
+Import repository Git vào Vercel, cấu hình:
 
-Nguồn tham khảo:
-- Google origin rules: https://developers.google.com/identity/protocols/oauth2/javascript-implicit-flow#origin-validation
-- GIS setup: https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid
-- Nginx WebSocket: https://nginx.org/en/docs/http/websocket.html
-- Cookie: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie
-- Mixed content: https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Mixed_content
+| Mục | Giá trị |
+| --- | --- |
+| Root Directory | `apps/web` |
+| Include source files outside Root Directory | Bật (cần `packages/*`) |
+| Framework | Vite |
+| Node.js | 22.x |
+| Install/Build/Output | Dùng `apps/web/vercel.json` |
+| Production env | `VITE_SERVER_URL=https://api.example.com` |
+
+Không đặt Root Directory ở root repo với cấu hình này. Install chỉ chọn workspace
+`web`; Build chạy `tsc -b && vite build`; Output là `dist`. Thêm custom domain
+`game.example.com` trong Vercel rồi đặt bản ghi DNS theo hướng dẫn của Vercel.
+Sau khi đổi `VITE_SERVER_URL`, phải redeploy vì Vite nhúng biến lúc build.
+
+Trong Google Cloud OAuth Web Client: Authorized JavaScript origins thêm
+`https://game.example.com` và `http://localhost:5173` nếu phát triển local.
+GOOGLE_CLIENT_ID phải giống ID backend trả qua `/api/config`.
+
+Dùng hai subdomain HTTPS **cùng tên miền gốc** để cookie HttpOnly/Secure với
+SameSite=Lax hoạt động trong bố trí này. Không cần cookie Domain dùng chung:
+cookie vẫn thuộc riêng host API, request frontend đã có `credentials: include`.
+
+Nếu dùng `project.vercel.app` với `api.example.com`, phải đặt COOKIE_SAME_SITE=none;
+trình duyệt vẫn có thể chặn cookie bên thứ ba. Vì thế không chọn bố trí này cho
+production. Preview Vercel nên dùng backend staging và origin được cho phép cụ thể,
+không wildcard toàn bộ `*.vercel.app`. Không kết nối preview vào production mặc định.
+
+## 4. Cập nhật và dữ liệu
+
+```bash
+sh deploy/scripts/backup-db.sh
+docker compose build server
+docker compose -f compose.yml -f compose.https.yml up -d --no-deps server
+docker compose -f compose.yml -f compose.https.yml ps
+docker compose logs --tail=100 server nginx
+```
+
+Nginx dùng DNS Docker động `server:2567`, nên khi container server đổi IP không
+cần restart Nginx. Restart backend vẫn ngắt trận đang chạy (room nằm trong RAM);
+hãy cập nhật lúc không có người chơi. Thay protocol/map chung cần phối hợp deploy
+client/server cùng phiên bản, vì frontend cũ có thể còn nằm trong tab người chơi.
+
+`backup-db.sh` dùng SQLite online backup, gồm dữ liệu đã commit trong WAL. Không
+chép riêng accounts.sqlite khi server đang ghi. File nằm trong `backups/`; đưa bản
+sao ra ngoài VPS. Script không tự xóa backup cũ.
+
+Khôi phục: dừng server, giữ một bản backup mới nhất, dùng container công cụ mount
+volume accounts để thay DB bằng bản snapshot và bỏ WAL/SHM cũ, đặt chủ sở hữu
+1000:1000 rồi khởi động lại. Không chạy `docker compose down -v` vì sẽ xóa volume.
+Volume accounts giữ tên như compose cũ; nếu trước đây đổi project name bằng `-p`,
+phải tiếp tục dùng đúng tên đó cho mọi lệnh để không vô tình tạo DB rỗng.
+
+Nếu cấu hình cũ dùng PEM ở `deploy/certs`, chuyển qua volume certbot theo bước 2.
+Quay về bootstrap sẽ cần restart Nginx; lên lịch thời gian bảo trì trước khi chuyển.
+
+## 5. Build cache và giới hạn kiểm chứng
+
+Docker chỉ cài dependency backend một lần, cache npm qua BuildKit, rồi prune dev
+trước khi copy sang runtime. Source thay đổi không làm mất cache install nếu
+package.json chưa đổi. Runtime chạy user node, filesystem read-only ngoài /data
+và /tmp; không chứa compiler. Log giới hạn 3 × 10 MB mỗi service.
+
+Repomix không cung cấp package-lock.json. Docker dùng manifest backend tách biệt
+và npm install; đây **chưa phải build tái lập bằng lockfile**. Khi chốt release,
+khóa image tag/digest và bổ sung lockfile cho manifest deploy nếu cần tái lập
+chính xác. Không đổi sang npm ci khi chưa có lockfile phù hợp.
+
+Đã kiểm tra cú pháp TS/TSX, YAML/JSON và khả năng áp dụng patch. Chưa build image,
+chưa cấp certificate và chưa deploy Vercel/VPS trong môi trường này.
+
+Tham khảo chính thức:
+- https://nginx.org/en/docs/http/websocket.html
+- https://vercel.com/docs/monorepos/monorepo-faq
+- https://eff-certbot.readthedocs.io/en/stable/using.html

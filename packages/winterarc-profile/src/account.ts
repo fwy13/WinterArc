@@ -49,8 +49,9 @@ export interface TournamentStanding extends PublicProfile {
   tournamentPoints: number;
   tournamentWins: number;
 }
-export type ProfileRole = 'student' | 'sponsor_bronze' | 'sponsor_silver' | 'sponsor_gold' | 'sponsor_platinum' | 'sponsor_diamond';
+export type ProfileRole = 'club' | 'student' | 'sponsor_bronze' | 'sponsor_silver' | 'sponsor_gold' | 'sponsor_platinum' | 'sponsor_diamond';
 export const PROFILE_ROLES: readonly ProfileRole[] = [
+  'club',
   'student',
   'sponsor_bronze',
   'sponsor_silver',
@@ -86,3 +87,6 @@ export interface AccountConfig {
   economy: typeof ECONOMY;
   serverNow: number;
 }
+
+/** Admin-only fields. Never send this object into public room snapshots. */
+export interface AdminPlayer extends PublicProfile { email: string; tokens: number; bonusSpins: number; revision: number }

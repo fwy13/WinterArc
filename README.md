@@ -117,6 +117,6 @@ Người duy trì cấu hình tại `apps/web/src/config/maintainers.ts`. Giữ 
 - [Editor Vite–React riêng](docs/EDITOR_APP.md)
 - [Cực quang và mức chất lượng](docs/AURORA.md)
 
-## Backend Docker + Nginx
+## Deploy production: Vercel + VPS
 
-Xem [docs/DEPLOY_DOCKER.md](docs/DEPLOY_DOCKER.md) để chạy bằng IP, cấu hình HTTPS/WebSocket, Google login, cookie và lưu SQLite.
+Frontend deploy Vercel (`apps/web`); backend chạy Docker + Nginx HTTPS trên VPS. Hướng dẫn DNS, Google login, certificate, backup và cập nhật: [docs/DEPLOY_DOCKER.md](docs/DEPLOY_DOCKER.md).

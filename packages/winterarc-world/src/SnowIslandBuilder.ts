@@ -1,3 +1,4 @@
+import { iceSpire, pennantGate } from './WinterLandmarks.js';
 import { MapKit } from './MapKit.js';
 import { BLOCK, VoxelWorld, type MapBuilder } from './VoxelWorld.js';
 /** Flat arena at sea level, a natural coastline and decorative outlying icebergs. */
@@ -51,6 +52,19 @@ export class SnowIslandBuilder implements MapBuilder {
     kit.fill(-5, 2, -29, 5, 2, -25, BLOCK.WOOD);
     for (const x of [-5, 5])
       for (let y = 3; y < 8; y++) kit.block(x, y, -27, y % 2 ? BLOCK.RED : BLOCK.SNOW);
+    // Embedded rings aid orientation without catching players dodging shockwaves.
+    for (let x = -29; x <= 29; x++) for (let z = -29; z <= 29; z++) {
+      const r = Math.hypot(x + .5, z + .5);
+      if (Math.abs(r - 12) < .4 || Math.abs(r - 28) < .4) kit.block(x, 2, z, BLOCK.STONE);
+      if ((Math.abs(x) <= 1 || Math.abs(z) <= 1) && r > 8 && r < 29) kit.block(x, 2, z, BLOCK.ICE);
+    }
+    // Distant glacier silhouettes remain beyond the combat boundary.
+    for (let i = 0; i < 10; i++) {
+      const angle = i * Math.PI / 5;
+      iceSpire(kit, Math.round(Math.cos(angle) * 39), 1, Math.round(Math.sin(angle) * 39), 7 + i % 4 * 2);
+    }
+    pennantGate(kit, -32, 7, 3, BLOCK.RED);
+    kit.fill(-4, 2, -35, 4, 2, -30, BLOCK.WOOD);
     return w;
   }
 }

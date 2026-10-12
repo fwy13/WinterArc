@@ -1,5 +1,6 @@
 import { PROFILE_ROLES, type ProfileRole } from 'winterarc-profile';
 import { useI18n } from '../i18n';
+import { CLUB } from '../config/club';
 import AvatarPhoto from './AvatarPhoto';
 
 export default function ProfileName({
@@ -28,10 +29,11 @@ export default function ProfileName({
           {player.name}
           {player.premium ? ' ★' : ''}
         </span>
+        {player.roles?.includes('club') && <img src={CLUB.mark} alt="CLB" title={t('social.role.club')} className="h-8 w-8 shrink-0 rounded-full bg-[#07314c] p-1" />}
         {showRoles && (
           <span className="mt-0.5 flex flex-wrap gap-1">
             {(player.roles || [])
-              .filter((r): r is ProfileRole => PROFILE_ROLES.includes(r as ProfileRole))
+              .filter((r): r is ProfileRole => r !== 'club' && PROFILE_ROLES.includes(r as ProfileRole))
               .map((role) => (
                 <small
                   key={role}

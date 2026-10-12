@@ -126,7 +126,7 @@ export class TournamentRoom extends Room<WinterState> {
         (value !== 'solo' && value !== 'squad')
       )
         return;
-      this.state.format = value;
+      this.state.format = this.state.mode === 'knockout' ? 'solo' : value;
       this.publishListing();
       for (const p of this.state.players.values()) p.ready = false;
     });
@@ -169,7 +169,7 @@ export class TournamentRoom extends Room<WinterState> {
           client.sessionId,
           message,
           'attack',
-          this.state.mode === 'crab' ? 420 : 350,
+          this.state.mode === 'knockout' ? 800 : this.state.mode === 'crab' ? 420 : 350,
         )
       )
         return;
@@ -192,15 +192,17 @@ export class TournamentRoom extends Room<WinterState> {
     }, STEP * 1000);
   }
   private drawMode(): GameId {
-    const modes = (Object.keys(GAME_DEFINITIONS) as GameId[])
-      .filter(mode => mode !== this.lastPlayedMode);
+    const enabled = accounts().enabledModes();
+    const choices = enabled.filter(mode => mode !== this.lastPlayedMode);
+    const modes = choices.length ? choices : enabled;
     return modes[randomInt(modes.length)];
   }
   private isMode(value: unknown): value is GameId {
-    return typeof value === 'string' && Object.hasOwn(GAME_DEFINITIONS, value);
+    return typeof value === 'string' && Object.hasOwn(GAME_DEFINITIONS, value) && accounts().enabledModes().includes(value as GameId);
   }
   private selectMode(mode: GameId): void {
     this.state.mode = mode;
+    if (mode === 'knockout') this.state.format = 'solo';
     // Retain these wire fields so existing snapshots and previews remain compatible.
     this.state.stages.clear();
     this.state.stages.push(mode);
@@ -208,7 +210,7 @@ export class TournamentRoom extends Room<WinterState> {
     this.world = WorldFactory.create(mode);
     let index = 0;
     for (const p of this.state.players.values()) {
-      Object.assign(p, this.world.spawn(index++), { vy: 0 });
+      Object.assign(p, this.world.spawn(index++), { vy: 0, vx: 0, vz: 0 });
     }
   }
   private publishListing(): void {
@@ -224,6 +226,7 @@ export class TournamentRoom extends Room<WinterState> {
     try {
       const profile = accounts().ticket(options.accessTicket, true);
       const observer = options.observer === true;
+      if (!observer && this.state.modeSelection !== 'random' && !accounts().enabledModes().includes(this.state.mode)) throw new AccountError(403, 'MODE_DISABLED');
       if (observer && !profile.admin) throw new AccountError(403, 'ADMIN_REQUIRED');
       if (!observer && !['lobby', 'finished'].includes(this.state.phase)) throw new AccountError(403, 'Match already begun');
       if (this.password) await this.password.verify(options.password);
@@ -236,6 +239,7 @@ export class TournamentRoom extends Room<WinterState> {
   }
   onJoin(client: Client, _options: unknown, auth: { profile: RoomProfile; observer: boolean }): void {
     const { profile, observer } = auth;
+    if (!observer && this.state.modeSelection !== 'random' && !accounts().enabledModes().includes(this.state.mode)) throw new ServerError(403, 'MODE_DISABLED');
     if (!observer && !['lobby', 'finished'].includes(this.state.phase)) throw new ServerError(403, 'Match already begun');
     const contestants = [...this.state.players.values()].filter(p => !p.observer && p.connected);
     const capacity = this.state.tournamentId ? accounts().event(this.state.tournamentId).max_players : MAX_PLAYERS;
@@ -280,14 +284,24 @@ export class TournamentRoom extends Room<WinterState> {
       this.assignHost();
     }
   }
+  private readonly profileRevisions = new Map<string, number>();
   private assignHost(): void {
     for (const [id, player] of this.state.players) {
+      if (player.connected) {
+        const profile = accounts().profile(player.accountId);
+        if (this.profileRevisions.get(id) !== profile.revision) {
+          this.profileRevisions.set(id, profile.revision);
+          player.roles.clear(); player.roles.push(...profile.roles); player.premium = profile.premium;
+          this.clients.find(client => client.sessionId === id)?.send('accountChanged');
+        }
+      }
       player.admin = !!accounts().adminAuth.currentHash(this.adminSessions.get(id) || '');
       if (player.observer && !player.admin && player.connected) {
         player.connected = false;
         void this.clients.find(client => client.sessionId === id)?.leave(4003);
       }
     }
+    for (const id of this.profileRevisions.keys()) if (!this.state.players.has(id)) this.profileRevisions.delete(id);
     const valid = (p: PlayerState) => p.connected && (this.state.tournamentId ? p.admin : !p.observer);
     const current = this.state.players.get(this.state.hostId);
     if (!current || !valid(current)) this.state.hostId = [...this.state.players].find(([, p]) => valid(p))?.[0] || '';
@@ -330,6 +344,7 @@ export class TournamentRoom extends Room<WinterState> {
       return;
     }
     const nextMode = this.state.modeSelection === 'random' ? this.drawMode() : this.state.modeSelection;
+    if (!accounts().enabledModes().includes(nextMode)) { client.send('notice', '@account.error.MODE_DISABLED'); return; }
     if (this.state.tournamentId) {
       try { accounts().beginHeat(this.state.tournamentId, connected.map(([,p]) => p.accountId), nextMode); }
       catch { client.send('notice', '@account.tournamentNotReady'); return; }
@@ -391,7 +406,8 @@ export class TournamentRoom extends Room<WinterState> {
       const index = this.roster.indexOf(id);
       const profile = accounts().profile(p.accountId);
       Object.assign(p, { name: profile.name, avatar: profile.avatar, theme: profile.theme, premium: profile.premium, color: profile.color });
-      p.skinId = profile.skinId;
+      p.skinId = this.state.mode === 'knockout' ? 'snowman-knockout' : profile.skinId;
+      p.vx = 0; p.vz = 0;
       p.school = profile.school;
       p.avatarUrl = profile.avatarUrl;
       p.frameId = profile.frameId;
@@ -555,6 +571,10 @@ export class TournamentRoom extends Room<WinterState> {
       const cmd = this.inputs.get(id)?.commands.shift();
       if (cmd) p.ack = cmd.seq;
       if (p.observer || p.out || p.qualified) continue;
+      if (this.state.mode === 'knockout') {
+        if (p.connected && cmd) this.controller?.aim?.(id, cmd.yaw, cmd.knockoutPower ?? 5, cmd.knockoutTurn ?? 0);
+        continue;
+      }
       movePlayer(p, p.connected && cmd ? cmd : { ...IDLE, yaw: p.yaw, pitch: p.pitch }, this.world);
     }
     this.controller?.update(STEP);

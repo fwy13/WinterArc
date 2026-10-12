@@ -9,3 +9,5 @@ export * from './src/MapKit.js';
 export * from './src/MapDocument.js';
 export * from './src/BlockShapes.js';
 export * from './src/ShapeRay.js';
+
+export * from './src/KnockoutBuilder.js';

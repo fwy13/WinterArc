@@ -1,4 +1,4 @@
-export type GameId = 'hunt' | 'colorfall' | 'giftrace' | 'crab' | 'icebreak';
+export type GameId = 'hunt' | 'colorfall' | 'giftrace' | 'crab' | 'icebreak' | 'knockout';
 export type MatchFormat = 'solo' | 'squad';
 export type Phase = 'lobby' | 'countdown' | 'playing' | 'intermission' | 'finished';
 export type Vec3 = [number, number, number];
@@ -8,6 +8,8 @@ export interface Position {
   z: number;
 }
 export interface Motion extends Position {
+  vx?: number;
+  vz?: number;
   vy: number;
   yaw: number;
   pitch: number;

@@ -19,4 +19,5 @@ export interface RoundController {
   update(dt: number): void;
   interact?(id: string, data: unknown): void;
   attack?(id: string): void;
+  aim?(id: string, yaw: number, power: number, turn: number): void;
 }

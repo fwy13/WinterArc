@@ -1,8 +1,6 @@
-# Requires deploy/certs/fullchain.pem and privkey.pem, valid for the public hostname.
 services:
   nginx:
     ports:
       - "${HTTPS_PORT:-443}:443"
     volumes:
-      - ./deploy/nginx/https.conf:/etc/nginx/nginx.conf:ro
-      - ./deploy/certs:/etc/nginx/certs:ro
+      - ./deploy/nginx/https.conf:/etc/nginx/templates/default.conf.template:ro

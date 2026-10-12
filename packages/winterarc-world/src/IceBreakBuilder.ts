@@ -1,3 +1,4 @@
+import { iceSpire } from './WinterLandmarks.js';
 import { MapKit } from './MapKit.js';
 import { BLOCK, VoxelWorld, type MapBuilder } from './VoxelWorld.js';
 
@@ -45,6 +46,15 @@ export class IceBreakBuilder implements MapBuilder {
         kit.block(x, y, z, y % 2 ? BLOCK.RED : BLOCK.SNOW);
       }
       kit.block(x, 15, z, BLOCK.GLOW);
+    }
+    // Distant grandstands never provide a permanent tile inside the breakable lake.
+    for (const side of [-1, 1]) for (let row = 0; row < 3; row++) {
+      const x = side * (27 + row * 2);
+      kit.fill(x, 2, -14, x + 1, 7 + row * 2, 14, BLOCK.STONE);
+      kit.fill(x, 8 + row * 2, -14, x + 1, 8 + row * 2, 14, BLOCK.SNOW);
+    }
+    for (const x of [-18, 0, 18]) for (const z of [-30, 30]) {
+      iceSpire(kit, x, 2, z, 8 + (x === 0 ? 4 : 0));
     }
     return world;
   }

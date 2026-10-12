@@ -1,3 +1,4 @@
+import { pennantGate } from './WinterLandmarks.js';
 import { MapKit } from './MapKit.js';
 import { BLOCK, VoxelWorld, type MapBuilder } from './VoxelWorld.js';
 export const COLOR_FLOOR = { half: 18, y: 8, tileSize: 3, blocks: [17, 18, 19, 20, 21] } as const;
@@ -36,6 +37,19 @@ export class ColorFallBuilder implements MapBuilder {
         kit.fill(x, 2, z, x, 11, z, BLOCK.RED);
         kit.block(x, 12, z, BLOCK.GLOW);
       }
+    // Floating theater surrounds the floor, separated by a six-block void.
+    for (const side of [-1, 1]) {
+      for (let row = 0; row < 3; row++) {
+        const z = side * (26 + row * 3);
+        kit.fill(-24, 2, z, 24, 5 + row * 2, z + 1, BLOCK.DARK);
+        kit.fill(-24, 6 + row * 2, z, 24, 6 + row * 2, z + 1, BLOCK.SNOW);
+      }
+      pennantGate(kit, side * 25, 23, 9, BLOCK.GOLD);
+      // All five colors form a static decoration, not a safe-color signal.
+      COLOR_FLOOR.blocks.forEach((color, index) => {
+        kit.fill(side * 25, 9, index * 4 - 9, side * 25, 11, index * 4 - 7, color);
+      });
+    }
     return world;
   }
 }

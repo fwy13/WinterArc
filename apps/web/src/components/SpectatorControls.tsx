@@ -14,7 +14,7 @@ export default function SpectatorControls({ state, onChange }: {state:Snapshot;o
   const candidates=state.players.filter(p=>!p.observer && !p.out && !p.qualified && p.connected && p.hp>0);
   const selected=candidates.some(p=>p.id===target)?target:(candidates[0]?.id||'');
   useEffect(()=>{onChange({target:selected,distance,angle,elevation});},[selected,distance,angle,elevation,onChange]);
-  return <section className="pointer-events-auto fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-1/2 z-40 w-[min(94vw,38rem)] -translate-x-1/2 rounded border border-fir/40 bg-paper/95 p-2 text-xs shadow-lg">
+  return <section className="match-spectator pointer-events-auto fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-1/2 z-40 w-[min(94vw,38rem)] -translate-x-1/2 rounded border border-fir/40 p-2 text-xs shadow-lg">
     <div className="flex items-center gap-2">
       <label htmlFor="spectate-player" className="shrink-0 font-bold">{t(me?.observer?'account.director':'account.spectating')}</label>
       <select id="spectate-player" className={`${field} !min-h-9 !py-1`} value={selected} onChange={e=>setTarget(e.target.value)}>

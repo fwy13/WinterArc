@@ -4,10 +4,11 @@ import type { Snapshot, ShotEvent } from 'winterarc-protocol';
 import type { GameMode, ModeContext } from './GameMode.js';
 
 export class IceBreakMode implements GameMode {
-  readonly id = 'icebreak' as const;
+  readonly id: 'icebreak' | 'knockout';
   private readonly warning: Mesh;
   private snapshot: Snapshot | null = null;
-  constructor(private readonly context: ModeContext) {
+  constructor(private readonly context: ModeContext, id: 'icebreak' | 'knockout' = 'icebreak') {
+    this.id = id;
     this.warning = CreateTorus('ice-warning', { diameter: 2, thickness: 0.055, tessellation: 64 }, context.meshes.scene);
     this.warning.material = context.meshes.material('#ffbb65', 0.8);
     this.warning.position.y = 9.04;

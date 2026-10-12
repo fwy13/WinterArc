@@ -1,16 +1,19 @@
-import { GAME_DEFINITIONS } from 'winterarc-gameplay';
+import { useEffect } from 'react';
+import { useEnabledGames } from '../config/gameAvailability';
+import { ClubLogo } from './ClubBrand';
 import { type GameId, type MatchFormat } from 'winterarc-core';
 import type { ConnectionStatus } from '../network/NetworkService';
 import RoomBrowser from './RoomBrowser';
 import type { PublicRoom } from 'winterarc-protocol';
 import { useI18n } from '../i18n';
-import { primary, secondary, field, eyebrow, panel, PaperHolly } from './ui';
+import { primary, secondary, field, eyebrow, panel } from './ui';
 export const gameIcons: Record<GameId, string> = {
   hunt: '☃',
   colorfall: '▦',
   giftrace: '🎁',
   crab: '🦀',
   icebreak: '❄',
+  knockout: '☃',
 };
 interface Props {
   randomMode: boolean;
@@ -47,20 +50,23 @@ interface Props {
   onCodeChange(value: string): void;
 }
 export default function ArcadeMenu(p: Props) {
+  const enabledModes = useEnabledGames();
   const { t } = useI18n();
+  useEffect(() => { if (!enabledModes.includes(p.selected) && enabledModes[0]) p.onSelect(enabledModes[0]); }, [enabledModes, p.selected, p.onSelect]);
+  useEffect(() => { if (p.selected === 'knockout' && !p.randomMode && p.format !== 'solo') p.onFormat('solo'); }, [p.selected, p.randomMode, p.format, p.onFormat]);
   const busy = p.status === 'connecting';
   return (
     <main className="relative z-10 mx-auto grid w-full max-w-7xl gap-4 px-3 pb-8 pt-28 sm:gap-8 sm:px-10 sm:pb-20 sm:pt-28 min-[640px]:grid-cols-[1fr_1fr] lg:gap-16 [@media(max-height:500px)]:pt-14 [@media(max-height:500px)]:gap-3">
       <section className="space-y-5">
-        <div className="paper-sheet paper-tape p-5 sm:p-7">
+        <div className="paper-sheet club-game-hero p-5 sm:p-7">
+          <ClubLogo />
           <div className="flex items-center justify-between gap-3">
             <p className={eyebrow}>{t('menu.eyebrow')}</p>
-            <PaperHolly />
+            <span className="club-game-tag">WINTER ARCADE</span>
           </div>
           <h1 className="font-note my-3 text-3xl font-bold leading-tight sm:text-5xl [@media(max-height:500px)]:text-2xl">
             {t('menu.title')}
           </h1>
-          <p className="text-sm leading-6 text-ink/75">{t('menu.subtitle')}</p>
           <p className="mt-5 border-t border-dashed border-ink/30 pt-3 font-note text-lg text-berry">
             {t('paper.greeting')}
           </p>
@@ -81,7 +87,6 @@ export default function ArcadeMenu(p: Props) {
               {t('social.tournamentRoom')}
             </label>
             {p.tournament && <>
-              <p className="text-xs">{t('social.tournamentRoomHint')}</p>
               <label className="block text-xs">{t('account.eventTitle')}
                 <input className={field} minLength={3} maxLength={80} value={p.tournamentTitle} required onChange={e => p.onTournamentTitle(e.target.value)} />
               </label>
@@ -110,13 +115,12 @@ export default function ArcadeMenu(p: Props) {
             disabled={busy || p.randomMode}
             onChange={(e) => p.onSelect(e.target.value as GameId)}
           >
-            {(Object.keys(GAME_DEFINITIONS) as GameId[]).map((mode) => (
+            {enabledModes.map((mode) => (
               <option key={mode} value={mode}>
                 {gameIcons[mode]} {t(`games.${mode}.title`)}
               </option>
             ))}
           </select>
-          <p className="text-xs leading-5 text-ink/65">{p.randomMode ? t('room.randomHint') : t(`games.${p.selected}.description`)}</p>
           <><label className="block text-xs font-semibold text-ink/80" htmlFor="match-format">
                 {t('menu.format')}
               </label>
@@ -128,9 +132,9 @@ export default function ArcadeMenu(p: Props) {
                 onChange={(e) => p.onFormat(e.target.value as MatchFormat)}
               >
                 <option value="solo">{t('format.solo')}</option>
-                <option value="squad">{t('format.squad')}</option>
+                <option value="squad" disabled={p.selected === 'knockout' && !p.randomMode}>{t('format.squad')}</option>
               </select>
-              <p className="text-xs leading-6 text-ink/65">{t(`format.${p.format}Help`)}</p></>
+              </>
           <label className="flex items-center gap-3 text-sm">
             <input
               type="checkbox"
@@ -143,7 +147,6 @@ export default function ArcadeMenu(p: Props) {
           </label>
           {(p.privateRoom || p.tournament) && (
             <>
-              <p className="text-xs text-ink/65">{t('room.privateHint')}</p>
               <label className="block text-xs text-ink/80" htmlFor="create-password">
                 {t('room.newPassword')}
               </label>

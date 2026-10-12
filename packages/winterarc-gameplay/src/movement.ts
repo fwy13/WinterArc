@@ -57,6 +57,7 @@ export function movePlayer<T extends Motion>(
   input: Controls,
   world: VoxelWorld,
   dt = STEP,
+  drag = 3,
 ): T {
   let f = input.forward,
     s = input.side;
@@ -66,8 +67,12 @@ export function movePlayer<T extends Motion>(
     s /= norm;
   }
   const speed = input.sprint ? 6.4 : 4.3;
-  const dx = (Math.sin(input.yaw) * f + Math.cos(input.yaw) * s) * speed * dt;
-  const dz = (Math.cos(input.yaw) * f - Math.sin(input.yaw) * s) * speed * dt;
+  let dx = (Math.sin(input.yaw) * f + Math.cos(input.yaw) * s) * speed * dt;
+  let dz = (Math.cos(input.yaw) * f - Math.sin(input.yaw) * s) * speed * dt;
+  dx += (p.vx || 0) * dt;
+  dz += (p.vz || 0) * dt;
+  p.vx = (p.vx || 0) * Math.exp(-drag * dt);
+  p.vz = (p.vz || 0) * Math.exp(-drag * dt);
   p.yaw = input.yaw;
   p.pitch = input.pitch;
   const grounded = collides(world, p.x, p.y - 0.025, p.z);
@@ -117,8 +122,8 @@ export function movePlayer<T extends Motion>(
     }
     return true;
   }
-  axis('x', dx);
-  axis('z', dz);
+  if (!axis('x', dx)) p.vx = 0;
+  if (!axis('z', dz)) p.vz = 0;
   if (!axis('y', p.vy * dt)) p.vy = 0;
   if (p.y < -5 || p.y > 50) Object.assign(p, world.spawn(), { vy: 0 });
   return p;

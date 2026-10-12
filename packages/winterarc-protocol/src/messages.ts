@@ -1,10 +1,13 @@
 import type { ModeSelection, Controls, Motion, Position, Vec3, GameId, MatchFormat, Phase, Target, BossAction, DangerZone } from 'winterarc-core';
 
 export interface InputCommand extends Controls {
+  knockoutPower?: number;
+  knockoutTurn?: number;
   seq: number;
   round: number;
 }
 export interface PlayerSnapshot extends Motion {
+  launchPower?: number;
   accountId: string;
   avatar: string;
   avatarUrl: string;
@@ -77,6 +80,7 @@ export interface Snapshot {
   tournamentRounds: number;
   tournamentCompleted: number;
   resultMode: GameId;
+  knockout: { stage: string; remaining: number; turn: number };
   ice: { radius: number; shrinkIn: number };
   privateRoom: boolean;
   roomId: string;

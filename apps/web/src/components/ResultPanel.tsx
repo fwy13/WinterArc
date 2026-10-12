@@ -1,7 +1,7 @@
+import { useEnabledGames } from '../config/gameAvailability';
 import TournamentBoard from './TournamentBoard';
 import ProfileName from '../account/ProfileName';
-import { GAME_DEFINITIONS } from 'winterarc-gameplay';
-import { type GameId, type ModeSelection, type MatchFormat } from 'winterarc-core';
+import { type ModeSelection, type MatchFormat } from 'winterarc-core';
 import { type Snapshot } from 'winterarc-protocol';
 import { useI18n } from '../i18n';
 import { panel, primary, secondary, field, eyebrow } from './ui';
@@ -22,6 +22,7 @@ export default function ResultPanel({
   onMode,
   onFormat,
 }: Props) {
+  const enabledModes = useEnabledGames();
   const { t } = useI18n();
   const me = s.players.find((p) => p.id === s.selfId);
   const host = s.hostId === s.selfId;
@@ -75,7 +76,7 @@ export default function ResultPanel({
               onChange={(e) => onMode(e.target.value as ModeSelection)}
             >
               <option value="random">{t('room.random')}</option>
-          {(Object.keys(GAME_DEFINITIONS) as GameId[]).map((id) => (
+          {enabledModes.map((id) => (
                 <option key={id} value={id}>
                   {t(`games.${id}.title`)}
                 </option>
@@ -91,7 +92,7 @@ export default function ResultPanel({
               onChange={(e) => onFormat(e.target.value as MatchFormat)}
             >
               <option value="solo">{t('format.solo')}</option>
-              <option value="squad">{t('format.squad')}</option>
+              <option value="squad" disabled={s.mode === 'knockout'}>{t('format.squad')}</option>
             </select>
           </label>
           <ul className="my-4 max-h-56 divide-y divide-ink/15 overflow-auto text-sm">

@@ -9,9 +9,12 @@ export interface RoomPlayer extends Omit<PlayerSnapshot, 'id' | 'roles' | 'found
   found: Iterable<string>;
 }
 export interface RoomState extends Omit<Snapshot,
-  'roomId' | 'selfId' | 'ice' | 'floor' | 'players' | 'targets' | 'zones'
+  'roomId' | 'selfId' | 'knockout' | 'ice' | 'floor' | 'players' | 'targets' | 'zones'
   | 'brokenIce' | 'stages' | 'winnerIds'
 > {
+  knockoutStage: string;
+  knockoutRemaining: number;
+  knockoutTurn: number;
   iceRadius: number;
   iceShrinkIn: number;
   floorCycle: number;

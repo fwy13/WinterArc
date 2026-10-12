@@ -1,0 +1,49 @@
+/* IT Club palette + arcade surfaces. Semantic danger colors remain distinct. */
+:root { --club-navy:#023263; --club-cyan:#50f8f7; --club-mint:#9ae5db; --club-white:#ffffff; --club-blue:#3b95e9; }
+.paper-sheet { border:1px solid #02326330; border-radius:20px; background-image:none; background-color:#f5fbff; box-shadow:0 12px 40px #02326312,0 3px 0 #02326315; }
+.paper-tab { border:1px solid #02326335; border-radius:11px; box-shadow:0 3px 0 #02326316; background-color:#f4fbff; }
+.paper-tape::before { top:0; left:24px; width:58px; height:3px; border:0; border-radius:0 0 8px 8px; background:#3b95e9; transform:none; }
+.club-logo-plate { display:flex; justify-content:center; align-items:center; width:fit-content; max-width:100%; padding:24px 28px; border:1px solid #50f8f740; border-radius:16px; background:#023263; }
+.club-logo-plate img { display:block; width:260px; max-width:100%; height:auto; object-fit:contain; }
+.club-game-hero { position:relative; overflow:hidden; border-color:#3b95e945; background:radial-gradient(circle at 100% 0,#50f8f725,transparent 60%),#f5fbff; }
+.club-game-hero .club-logo-plate { margin-bottom:24px; }
+.club-game-hero h1 { font-weight:800; letter-spacing:-.04em; }
+.club-game-tag { color:#023263; border:1px solid #02326326; background:#9ae5db66; border-radius:6px; padding:5px 8px; font-size:9px; font-weight:800; letter-spacing:.1em; white-space:nowrap; }
+.club-socials { display:flex; flex-wrap:wrap; gap:10px; }
+.club-socials a { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:44px; padding:10px 15px; border-radius:10px; border:1px solid #02326330; background:#fff; color:#023263; text-decoration:none; font-size:12px; font-weight:700; transition:background .15s ease; }
+.club-socials a:hover { background:#d9f8f5; }
+.club-socials a:focus-visible,.club-email:focus-visible { outline:3px solid #3b95e9; outline-offset:3px; }
+.club-socials svg { width:17px; height:17px; }
+.club-socials a>span { opacity:.5; }
+.club-credit-card { padding:24px; border:1px solid #3b95e94d; border-radius:18px; background:radial-gradient(circle at 100% 0,#3b95e920,transparent 65%),#edf8fc; color:#023263; }
+.club-credit-card .club-logo-plate { margin-bottom:22px; }
+.club-credit-card .club-kicker { margin:0 0 8px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.12em; }
+.club-credit-card h3 { font-size:24px; font-weight:800; letter-spacing:-.025em; }
+.club-credit-card h4 { font-size:18px; font-weight:800; margin-bottom:8px; }
+.club-credit-card p { font-size:13px; line-height:1.85; }
+.club-credit-card .club-credit-role { font-weight:700; margin:12px 0 20px; }
+.club-credit-divider { height:1px; background:#02326320; margin:22px 0; }
+.club-email { display:inline-block; margin-top:18px; color:#023263; font-size:12px; text-decoration:underline; text-underline-offset:4px; overflow-wrap:anywhere; }
+.game-hud.game-hud { --hud-accent:#50f8f7; --hud-muted:#c2d9ed; }
+.game-hud.game-hud[data-mode="hunt"] { --hud-accent:#9ae5db; }
+.game-hud.game-hud[data-mode="crab"] { --hud-accent:#ffb5a9; }
+.game-hud.game-hud[data-mode="giftrace"] { --hud-accent:#efc394; }
+.game-hud.game-hud[data-mode="icebreak"] { --hud-accent:#50f8f7; }
+.game-hud.game-hud[data-mode="colorfall"] { --hud-accent:#cdb8f1; }
+.game-hud .hud-surface { background:linear-gradient(135deg,#023263f5,#052744ed); border-color:#3b95e950; box-shadow:0 5px 20px #001b342b,inset 0 1px 0 #50f8f713; }
+.game-hud .hud-objective { border-top-color:var(--hud-accent); }
+.game-hud .hud-surface.is-urgent { border-color:#ffb08b; }
+.game-hud .hud-mode-icon.hud-club-mark { width:44px; height:44px; background:#023263; border:0; border-radius:10px; }
+.game-hud .hud-club-mark img { display:block; width:32px; height:32px; object-fit:contain; }
+.game-hud--touch .hud-mode-icon.hud-club-mark { display:grid; width:40px; height:40px; }
+.game-hud .hud-controls { background:#023263ed; }
+.match-settings.match-settings,.match-stats.match-stats,.match-spectator.match-spectator,.match-toast.match-toast { background:#023263f2; border-color:#3b95e960; color:#fff; }
+.match-settings.match-settings:hover { background:#134a78; }
+.match-pause-card.match-pause-card { background:linear-gradient(135deg,#023263,#062a49); border-color:#3b95e970; }
+.match-pause-card.match-pause-card button { background:#124573; border-color:#50f8f74d; }
+.match-pause-card.match-pause-card button:hover { background:#205b8d; }
+.hud-touch-button.hud-touch-button { background:#023263df; border-color:#3b95e9a0; }
+.hud-touch-button.hud-touch-button:active { background:#215f91; }
+.hud-touch-button.hud-touch-button--ready { background:#075975ef; border-color:#50f8f7; }
+@media (max-width:480px) { .club-logo-plate { padding:18px; } .club-logo-plate img { width:80px; height:80px; } .club-credit-card { padding:18px; } .club-game-hero .club-logo-plate { margin-bottom:16px; } }
+@media (prefers-reduced-motion:reduce) { .club-socials a { transition:none; } }

@@ -37,7 +37,7 @@ export function accountRoutes(allowedOrigins: string[]): Router {
     const now = Date.now();
     for (const [key, value] of limits) if (value.until <= now) limits.delete(key);
     for (const [key, until] of challenges) if (until <= now) challenges.delete(key);
-    const key = `${req.socket.remoteAddress}:${req.path.startsWith('/auth') ? 'auth' : 'api'}`;
+    const key = `${req.ip || req.socket.remoteAddress}:${req.path.startsWith('/auth') ? 'auth' : 'api'}`;
     const bucket = limits.get(key) || { count: 0, until: now + 60000 };
     bucket.count++;
     limits.set(key, bucket);
@@ -98,7 +98,7 @@ export function accountRoutes(allowedOrigins: string[]): Router {
     res.json(store.saveSettings(id, req.body?.settings, req.body?.revision));
   }));
   router.post('/admin/login', route(async (req, res) => {
-    const session = await store.adminAuth.login(req.body?.username, req.body?.password, req.socket.remoteAddress || 'unknown');
+    const session = await store.adminAuth.login(req.body?.username, req.body?.password, req.ip || req.socket.remoteAddress || 'unknown');
     store.adminAuth.logout(cookie(req, 'winter_admin'));
     res.cookie('winter_admin', session.token, { ...cookieOptions, maxAge: 8 * 3600000 });
     res.json({ username: session.username, expires: session.expires });
@@ -115,6 +115,15 @@ export function accountRoutes(allowedOrigins: string[]): Router {
     const page = Math.max(0, Math.min(100000, Math.floor(Number(req.query.page) || 0)));
     res.json(store.adminUsers(hash, search, page));
   }));
+  router.get('/games', route((_req, res) => res.json({ enabledModes: store.enabledModes() })));
+  router.post('/admin/economy', route((req, res) => {
+    const hash = admin(req);
+    if (typeof req.body?.userId !== 'string') throw new AccountError(400, 'ACCOUNT_NOT_FOUND');
+    res.json({ user: store.setEconomy(hash, req.body.userId, req.body.tokens, req.body.bonusSpins, req.body.revision, req.body.reason) });
+  }));
+  router.get('/admin/club-emails', route((req, res) => res.json({ emails: store.clubEmails(admin(req)) })));
+  router.post('/admin/club-emails', route((req, res) => res.json({ emails: store.editClubEmails(admin(req), req.body?.emails, req.body?.remove) })));
+  router.post('/admin/games', route((req, res) => res.json({ enabledModes: store.setModeEnabled(admin(req), req.body?.mode, req.body?.enabled) })));
   router.post('/admin/premium', route((req, res) => {
     const id = admin(req);
     if (typeof req.body?.userId !== 'string') throw new AccountError(400, 'ACCOUNT_NOT_FOUND');

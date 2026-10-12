@@ -1,8 +1,8 @@
-import { GAME_DEFINITIONS } from 'winterarc-gameplay';
-import { type GameId } from 'winterarc-core';
+import { useEnabledGames } from '../config/gameAvailability';
 import { useI18n } from '../i18n';
 import { Modal } from './ui';
 export default function HelpPanel({ onClose }: { onClose: () => void }) {
+  const enabledModes = useEnabledGames();
   const { t } = useI18n();
   return (
     <Modal title={t('common.help')} onClose={onClose}>
@@ -15,7 +15,7 @@ export default function HelpPanel({ onClose }: { onClose: () => void }) {
         ))}
       </div>
       <div className="space-y-6">
-        {(Object.keys(GAME_DEFINITIONS) as GameId[]).map((id) => (
+        {enabledModes.map((id) => (
           <section key={id}>
             <h3 className="font-note mb-2 font-bold text-fir">{t(`games.${id}.title`)}</h3>
             <p className="text-sm leading-7 text-ink/80">{t(`games.${id}.help`)}</p>

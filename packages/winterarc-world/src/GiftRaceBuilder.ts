@@ -1,3 +1,4 @@
+import { pennantGate } from './WinterLandmarks.js';
 import { MapKit } from './MapKit.js';
 import { BLOCK, VoxelWorld, type MapBuilder } from './VoxelWorld.js';
 export const GIFT_RACE = {
@@ -14,13 +15,27 @@ export class GiftRaceBuilder implements MapBuilder {
     const kit = new MapKit(world);
     kit.fill(-19, 0, -64, 19, 0, 64, BLOCK.ICE);
     kit.fill(-18, 8, -63, 18, 8, -42, BLOCK.SNOW);
+    // Three readable stages; all paths return to the original checkpoint elevation.
     for (let z = -41; z <= 48; z++) {
-      const segment = Math.floor((z + 41) / 7);
-      // One-block gaps between platforms; sideways variation creates three broad routes.
-      if ((z + 41) % 7 === 6) continue;
-      for (const lane of [-10, 0, 10]) {
-        const center = lane + (segment % 2 ? 1 : -1);
-        kit.fill(center - 2, 8, z, center + 2, 8, z, segment % 3 ? BLOCK.SNOW : BLOCK.WOOD);
+      if (z < -14) {
+        // Gift steps: broad platforms, one-block gaps and at most a one-block rise.
+        const segment = Math.floor((z + 41) / 6);
+        if ((z + 41) % 6 === 5) continue;
+        const y = 8 + (segment % 2);
+        for (const lane of [-10, 0, 10]) {
+          kit.fill(lane - 2, y, z, lane + 2, y, z, segment % 2 ? BLOCK.GREEN : BLOCK.RED);
+          if ((z + 41) % 6 === 2) kit.fill(lane - 2, y, z, lane + 2, y, z, BLOCK.RIBBON);
+        }
+      } else if (z < 14) {
+        // Serpentine ice lanes; one-voxel sideways steps still overlap by four voxels.
+        const offset = Math.round(Math.sin((z + 12) * Math.PI / 14) * 2);
+        if (z === -2 || z === 9) continue;
+        for (const lane of [-10, 0, 10]) kit.fill(lane + offset - 2, 8, z, lane + offset + 2, 8, z, BLOCK.ICE);
+      } else {
+        // Alternating bridges with crossovers for changing lanes.
+        if ((z - 18) % 8 === 7) continue;
+        for (const lane of [-10, 0, 10]) kit.fill(lane - 2, 8, z, lane + 2, 8, z, BLOCK.WOOD);
+        if (z === 26 || z === 34) kit.fill(-12, 8, z, 12, 8, z + 1, BLOCK.SNOW);
       }
     }
     for (const z of GIFT_RACE.checkpoints) {
@@ -32,6 +47,12 @@ export class GiftRaceBuilder implements MapBuilder {
     for (const x of [-14, 14]) world.trees.push({ x, y: 9, z: 56, scale: 1.1 });
     world.loseY = 3;
     for (const z of [-50, -20, 10, 40]) kit.candyCane(17, 9, z);
+    // Stage markers stay above head height; border lights sit outside the lanes.
+    for (const z of [-27, 2, 30]) pennantGate(kit, z, 17, 9, z < -12 ? BLOCK.GREEN : z < 16 ? BLOCK.ICE : BLOCK.GOLD);
+    for (const x of [-16, 16]) for (const z of [-53, -34, -5, 23, 52]) kit.lamp(x, 9, z, 3);
+    // Checkered finish is flush with the landing platform.
+    for (let x = -12; x <= 12; x++) for (let z = 53; z <= 55; z++) kit.block(x, 8, z, (x + z) % 2 ? BLOCK.DARK : BLOCK.SNOW);
+    pennantGate(kit, 59, 10, 9, BLOCK.GOLD);
     return world;
   }
 }

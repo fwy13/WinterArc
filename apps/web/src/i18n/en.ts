@@ -1,3 +1,5 @@
+import { clubEn } from './club';
+import { hudEn } from './hud';
 import { shopEn } from './shop';
 import { adminEn } from './admin';
 import { socialEn } from './social';
@@ -5,6 +7,20 @@ import { accountEn } from './account';
 import { vi, type TranslationKey } from './vi';
 export const en: Record<TranslationKey, string> = {
   ...vi, // Fallback first; English translations below take precedence.
+  "social.role.club": "Club member",
+  "games.knockout.title": "Knockout",
+  "games.knockout.tag": "SNOWMEN \u00b7 PUSH TO WIN",
+  "games.knockout.description": "Hold your ground. Push rivals off the ice!",
+  "games.knockout.help": "Look to aim, use Q/E or the slider to set power 1–10. When time runs out, arrows reveal and everyone launches together. The arena shrinks each turn; the last survivor wins.",
+  "ingame.knockout.label": "Snowman showdown",
+  "ingame.knockout.hint": "Aim · Set power · Wait for launch",
+  "account.error.MODE_DISABLED": "This game is closed. Choose another game.",
+  "account.error.PLAYER_CONFLICT": "Player data changed. Reload the balance before saving.",
+  "account.error.ECONOMY_INVALID": "Check tokens, spins and the adjustment reason.",
+  "account.error.EMAILS_INVALID": "Invalid email list (up to 100 per request).",
+  "account.error.EMAILS_LIMIT": "Up to 1,000 club emails.",
+  "account.error.LAST_GAME": "Keep at least one game open.",
+  'knockout.push': 'Push',
   'room.random': 'Random each match',
   'room.randomHint': 'The server draws a mode when the match starts, avoiding the last played mode. Turn off to choose manually.',
   'settings.skyQuality': 'Aurora sky',
@@ -17,6 +33,8 @@ export const en: Record<TranslationKey, string> = {
   ...socialEn,
   ...adminEn,
   ...shopEn,
+  ...hudEn,
+  ...clubEn,
   "session.singleTitle": "One game tab at a time",
   "session.singleHint": "Winter Arc is open in another tab. Return to it, or close it and retry here. The admin page can stay open separately.",
   "session.unsupported": "This browser cannot acquire a tab lock. Use HTTPS (or localhost for development) and a browser supporting Web Locks.",

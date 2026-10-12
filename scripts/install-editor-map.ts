@@ -23,7 +23,7 @@ async function main(): Promise<void> {
   if (exists && !args.includes('--force')) throw new Error('Map already exists. Pass --force to replace it.');
   const maps: Record<string, MapDocument> = {};
   for (const file of (await readdir(directory)).sort()) {
-    if (!/^(hunt|giftrace|crab|icebreak|colorfall)\.json$/.test(file) || file === `${doc.mode}.json`) continue;
+    if (!/^(hunt|giftrace|crab|icebreak|knockout|colorfall)\.json$/.test(file) || file === `${doc.mode}.json`) continue;
     const other = JSON.parse(await readFile(resolve(directory, file), 'utf8')) as MapDocument;
     validateMapDocument(other);
     if (file !== `${other.mode}.json`) throw new Error(`Mode/filename mismatch: ${file}`);

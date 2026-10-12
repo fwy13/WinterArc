@@ -1,12 +1,13 @@
+import AdminGameControls from './AdminGameControls';
 import { useCallback, useEffect, useState } from 'react';
-import type { PublicProfile, ProfileRole } from 'winterarc-profile';
+import type { AdminPlayer, ProfileRole } from 'winterarc-profile';
 import { api, ApiError } from '../account/service';
 import ProfileName from '../account/ProfileName';
 import { useI18n, type TranslationKey } from '../i18n';
 import { field, primary, secondary, panel } from '../components/ui';
 
 type Session = { username: string; expires: number };
-type Directory = { users: PublicProfile[]; total: number };
+type Directory = { users: AdminPlayer[]; total: number };
 export default function AdminPage() {
   const { t, locale, setLocale } = useI18n();
   const [session, setSession] = useState<Session | null>(null);
@@ -15,9 +16,10 @@ export default function AdminPage() {
   const [error, setError] = useState(''), [saved, setSaved] = useState(false);
   const [query, setQuery] = useState(''), [search, setSearch] = useState(''), [page, setPage] = useState(0);
   const [data, setData] = useState<Directory>({ users: [], total: 0 });
-  const [selected, setSelected] = useState<PublicProfile | null>(null);
+  const [selected, setSelected] = useState<AdminPlayer | null>(null);
   const [premium, setPremium] = useState(false), [student, setStudent] = useState(false);
   const [sponsor, setSponsor] = useState<'' | ProfileRole>('');
+  const [tokens, setTokens] = useState(0), [bonusSpins, setBonusSpins] = useState(0), [reason, setReason] = useState('');
   const [refresh, setRefresh] = useState(0);
   const fail = useCallback((e: unknown) => {
     if (e instanceof ApiError && e.status === 401) { setSession(null); setSelected(null); setData({ users: [], total: 0 }); }
@@ -35,7 +37,10 @@ export default function AdminPage() {
     if (!session) return;
     let active = true;
     void api<Directory>(`/admin/users?q=${encodeURIComponent(search)}&page=${page}`)
-      .then(value => { if (active) setData(value); })
+      .then(value => { if (active) {
+        setData(value);
+
+      } })
       .catch(e => { if (active) fail(e); });
     return () => { active = false; };
   }, [session, search, page, refresh, fail]);
@@ -44,7 +49,8 @@ export default function AdminPage() {
     setBusy(true); setError(''); setSaved(false);
     try { await action(); } catch (e) { fail(e); } finally { setBusy(false); }
   };
-  const choose = (user: PublicProfile) => {
+  const choose = (user: AdminPlayer) => {
+    setTokens(user.tokens); setBonusSpins(user.bonusSpins); setReason('');
     setSelected(user); setPremium(user.premium); setStudent(user.roles.includes('student'));
     setSponsor(user.roles.find(role => role.startsWith('sponsor_')) || '');
     setSaved(false); setError('');
@@ -94,11 +100,25 @@ export default function AdminPage() {
       <section className={`${panel} min-w-0 !p-4`}>
         {!selected ? <p>{t('admin.choose')}</p> : <fieldset disabled={busy} className="space-y-4">
           <ProfileName player={selected} />
-          <p className="break-all font-mono text-xs">{selected.id}</p>
+          <p className="break-all font-mono text-xs">{selected.email || selected.id}</p>
+          <form className="space-y-3 rounded-lg border border-fir/20 p-3" onSubmit={e => { e.preventDefault(); void run(async () => {
+            const result = await api<{ user: AdminPlayer }>('/admin/economy', { userId: selected.id, tokens, bonusSpins, revision: selected.revision, reason });
+            choose(result.user); setRefresh(n => n + 1); setSaved(true);
+          }); }}>
+            <h2 className="font-bold">{locale === 'vi' ? 'Thông số người chơi' : 'Player economy'}</h2>
+            <label className="block">Token<input className={field} type="number" min="0" max="1000000000" step="1" required value={tokens} onChange={e => setTokens(e.target.valueAsNumber)} /></label>
+            <label className="block">{locale === 'vi' ? 'Lượt quay thưởng' : 'Bonus spins'}<input className={field} type="number" min="0" max="10000" step="1" required value={bonusSpins} onChange={e => setBonusSpins(e.target.valueAsNumber)} /></label>
+            <label className="block">{locale === 'vi' ? 'Lý do chỉnh sửa' : 'Adjustment reason'}<input className={field} required minLength={3} maxLength={160} value={reason} onChange={e => setReason(e.target.value)} /></label>
+            <div className="flex flex-wrap gap-2"><button className={primary}>{locale === 'vi' ? 'Lưu thông số' : 'Save economy'}</button>
+            <button type="button" className={secondary} onClick={() => void run(async () => {
+              const fresh = await api<Directory>(`/admin/users?q=${encodeURIComponent(selected.id)}&page=0`);
+              const user = fresh.users.find(u => u.id === selected.id); if (user) choose(user); setRefresh(n => n+1);
+            })}>{locale === 'vi' ? 'Tải lại số dư' : 'Reload balance'}</button></div>
+          </form>
           <label className="flex gap-2"><input type="checkbox" checked={premium} onChange={e => setPremium(e.target.checked)} />Premium</label>
           <button className={primary} onClick={() => void run(async () => {
             await api('/admin/premium', { userId: selected.id, enabled: premium });
-            setSelected({ ...selected, premium }); setRefresh(n => n + 1); setSaved(true);
+            setSelected(null); setRefresh(n => n + 1); setSaved(true);
           })}>{t('social.savePremium')}</button>
           <hr className="border-fir/20" />
           <label className="flex gap-2"><input type="checkbox" checked={student} onChange={e => setStudent(e.target.checked)} />{t('social.role.student')}</label>
@@ -112,12 +132,13 @@ export default function AdminPage() {
           <button className={primary} onClick={() => void run(async () => {
             const roles: ProfileRole[] = [...(student ? ['student' as const] : []), ...(sponsor ? [sponsor] : [])];
             await api('/admin/roles', { userId: selected.id, roles });
-            setSelected({ ...selected, roles }); setRefresh(n => n + 1); setSaved(true);
+            setSelected(null); setRefresh(n => n + 1); setSaved(true);
           })}>{t('social.saveRoles')}</button>
           {saved && <p role="status" className="text-fir">{t('admin.saved')}</p>}
           <p className="text-xs text-ink/60">{t('admin.schoolHint')}</p>
         </fieldset>}
       </section>
+      <AdminGameControls onError={fail} />
     </div>}
   </main>;
 }
