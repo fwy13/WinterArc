@@ -29,7 +29,7 @@ export function normalizeGameSettings(value: Partial<GameSettings>): GameSetting
     skyQuality: value.skyQuality === 'off' || value.skyQuality === 'low' || value.skyQuality === 'high' ? value.skyQuality : 'auto',
     volume: number('volume', 0, 1), effectsVolume: number('effectsVolume', 0, 1), footstepsVolume: number('footstepsVolume', 0, 1),
     mouseSensitivity: number('mouseSensitivity', 1, 20), touchSensitivity: number('touchSensitivity', 0.25, 3),
-    fov: number('fov', 55, 100), renderScale: number('renderScale', 0.5, 1.5),
+    fov: number('fov', 55, 100), renderScale: number('renderScale', 0.5, 10),
     cameraBob: boolean('cameraBob'), cameraShake: boolean('cameraShake'), showStats: boolean('showStats'),
   };
 }
