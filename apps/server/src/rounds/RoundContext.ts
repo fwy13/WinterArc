@@ -13,6 +13,7 @@ export interface RoundContext {
   sound(kind: SoundKind, at: Vec3, playerId?: string): void;
   shot(event: ShotEvent): void;
   found(id: string, score: number): void;
+  resetInputs?(): void;
   privateCodes(id: string, data: CodeView): void;
   notice(id: string, text: string): void;
   privateDuel(id: string, data: DuelPrivate): void;

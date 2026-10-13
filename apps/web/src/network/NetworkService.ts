@@ -116,7 +116,8 @@ export class NetworkService {
       if (this.room !== room || !room.state?.players) return;
       const s = room.state;
       const value: Snapshot = {
-        codeView: s.mode === 'codehunt' && s.phase === 'playing' && codeView?.round === s.round ? codeView : undefined,
+        codeHunt: { turn:s.codeTurn, stage:s.codeStage, remaining:s.codeRemaining, startedAt:s.codeStartedAt },
+        codeView: s.mode === 'codehunt' && s.phase === 'playing' && codeView?.round === s.round && codeView.turn === s.codeTurn ? codeView : undefined,
         tournamentId: s.tournamentId,
         tournamentTitle: s.tournamentTitle,
         tournamentCapacity: s.tournamentCapacity,

@@ -28,7 +28,7 @@ export function HudLayout({ state: s, candidate = false, touch = false, onCodeGu
     : (s.mode === 'icebreak' || s.mode === 'knockout') && s.ice.shrinkIn > 0 && s.ice.shrinkIn <= 3;
   if (s.mode === 'wallduel') return <WallDuelHud state={s} touch={touch} />;
   return <div className={`game-hud ${touch ? 'game-hud--touch' : ''}`} data-mode={s.mode}>
-    {s.mode === 'codehunt' && playing && active && <CodeHuntHud key={s.round} state={s} touch={touch} onGuess={onCodeGuess} />}
+    {s.mode === 'codehunt' && playing && <CodeHuntHud key={`${s.round}:${s.codeHunt.turn}`} state={s} touch={touch} onGuess={onCodeGuess} />}
     {s.mode === 'knockout' && playing && s.knockout && <KnockoutHud state={s} active={active} />}
     <section className="hud-identity hud-surface">
       <span className="hud-mode-icon hud-club-mark"><img src={CLUB.mark} width={32} height={32} alt={CLUB.name} /></span>

@@ -543,7 +543,7 @@ export default function App() {
       {snap && snap.phase !== 'lobby' && (
         <>
           {snap.phase === 'playing' && !paused && !help && !information && !settingsOpen && (
-            <GameHud state={snap} candidate={candidate} onCodeGuess={code => networkRef.current?.send('codeGuess', { round: snap.round, code })} />
+            <GameHud state={snap} candidate={candidate} onCodeGuess={code => networkRef.current?.send('codeGuess', { round: snap.round, turn: snap.codeHunt.turn, code })} />
           )}
           {touchControls &&
             snap.phase === 'playing' &&

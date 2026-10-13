@@ -1,7 +1,7 @@
 import type { Motion, Vec3 } from 'winterarc-core';
 import { traceBlockShape, type VoxelWorld } from 'winterarc-world';
 import { EYE_HEIGHT } from './movement.js';
-export const CODE_HUNT = { hideSeconds: 15, rotateSeconds: 30, range: 18, cooldown: 1.2 } as const;
+export const CODE_HUNT = { rounds: 5, roundSeconds: 60, breakSeconds: 5, hideSeconds: 15, rotateSeconds: 30, range: 18, cooldown: 1.2 } as const;
 export function codeEpoch(elapsed: number): number {
   return elapsed < CODE_HUNT.hideSeconds ? -1 : Math.floor((elapsed - CODE_HUNT.hideSeconds) / CODE_HUNT.rotateSeconds);
 }
@@ -18,4 +18,11 @@ export function canReadCode(viewer: Motion, target: Motion, world: VoxelWorld): 
   const dot = dir[0] * Math.sin(viewer.yaw) * Math.cos(viewer.pitch) - dir[1] * Math.sin(viewer.pitch) + dir[2] * Math.cos(viewer.yaw) * Math.cos(viewer.pitch);
   if (dot < Math.cos(Math.PI / 4)) return false;
   return !traceBlockShape(world, from, dir, distance, 'collision');
+}
+
+/** Survival in the final turn does not override accumulated points. Ties share victory. */
+export function codeHuntWinnerIds(players: readonly { id: string; score: number; connected: boolean; observer: boolean; out?: boolean }[]): string[] {
+  const eligible = players.filter(p => p.connected && !p.observer);
+  const best = Math.max(-Infinity, ...eligible.map(p => p.score));
+  return eligible.filter(p => p.score === best).map(p => p.id);
 }

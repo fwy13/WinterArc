@@ -25,7 +25,7 @@ export interface ConnectOptions {
 
 /** Typed outgoing messages; the server still validates untrusted payloads at runtime. */
 export interface ClientMessages {
-  codeGuess: { round: number; code: string };
+  codeGuess: { round: number; turn: number; code: string };
   input: InputCommand;
   find: { round: number; target: string };
   attack: { round: number };

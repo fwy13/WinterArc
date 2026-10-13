@@ -150,6 +150,10 @@ export class WinterState extends Schema implements RoomState {
   duelYaw = 0;
   duelPitch = 0;
   duelCharge = 0;
+  codeTurn = 1;
+  codeStage = 'hide';
+  codeRemaining = 15;
+  codeStartedAt = 0;
   knockoutStage = 'aim';
   knockoutRemaining = 10;
   knockoutTurn = 1;
@@ -198,6 +202,7 @@ defineTypes(WinterState, {
   duelYaw: 'float32',
   duelPitch: 'float32',
   duelCharge: 'float32',
+  codeTurn: 'uint8', codeStage: 'string', codeRemaining: 'float32', codeStartedAt: 'float32',
   knockoutStage: 'string', knockoutRemaining: 'float32', knockoutTurn: 'uint16',
   iceRadius: 'float32',
   iceShrinkIn: 'float32',

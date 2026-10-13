@@ -168,19 +168,6 @@ export default function CreditsPage() {
                 </div>
               ))}
             </div>
-            <div className="support-sync" role="status">
-              {report?.bankSync?.status === 'error' &&
-                'Chưa đồng bộ được ngân hàng. Đang hiển thị dữ liệu đã lưu.'}
-              {report?.bankSync?.status === 'not_configured' && 'Chưa kết nối API ngân hàng.'}
-              {!!report?.bankSync?.lastSyncedAt && (
-                <span>
-                  Cập nhật ngân hàng:{' '}
-                  {new Date(report.bankSync.lastSyncedAt).toLocaleString('vi-VN', {
-                    timeZone: 'Asia/Ho_Chi_Minh',
-                  })}
-                </span>
-              )}
-            </div>
             <div className="support-ledger">
               <div className="support-table-scroll">
                 <table>
@@ -203,9 +190,9 @@ export default function CreditsPage() {
                           <time dateTime={entry.date}>{dateLabel(entry.date)}</time>
                         </td>
                         <td className="support-entry-title">
-                          {entry.kind === 'income' && entry.source === 'bank' ? (
+                          {entry.kind === 'income' ? (
                             <>
-                              <strong>{entry.senderName || 'Người ủng hộ'}</strong>
+                              <strong>{entry.senderName || entry.title || 'Người ủng hộ'}</strong>
                               <p className="support-donor-message">
                                 {entry.message || 'Không có lời nhắn'}
                               </p>

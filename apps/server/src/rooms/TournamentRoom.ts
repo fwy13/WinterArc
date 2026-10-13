@@ -4,7 +4,7 @@ import { accounts, AccountError, type MatchResult } from '../account/AccountStor
 import type { AccountProfile } from 'winterarc-profile';
 type RoomProfile = AccountProfile & { adminSessionHash: string };
 import { randomInt, randomUUID } from 'node:crypto';
-import { GAME_DEFINITIONS, IDLE, MAX_PLAYERS, STEP, movePlayer } from 'winterarc-gameplay';
+import { codeHuntWinnerIds, GAME_DEFINITIONS, IDLE, MAX_PLAYERS, STEP, movePlayer } from 'winterarc-gameplay';
 import { validInput, type InputCommand } from 'winterarc-protocol';
 import { type GameId } from 'winterarc-core';
 import { WorldFactory, randomFromSeed, type VoxelWorld } from 'winterarc-world';
@@ -170,7 +170,7 @@ export class TournamentRoom extends Room<WinterState> {
     });
     this.onMessage('codeGuess', (client, message: unknown) => {
       if (this.state.mode !== 'codehunt' || !this.validAction(client.sessionId, message, 'codeGuess', 1200)) return;
-      this.controller?.interact?.(client.sessionId, (message as { code?: unknown }).code);
+      this.controller?.interact?.(client.sessionId, message);
     });
     this.onMessage('attack', (client, message: unknown) => {
       if (
@@ -465,6 +465,10 @@ export class TournamentRoom extends Room<WinterState> {
           playerId,
         }),
       shot: (event) => this.broadcast('shot', event),
+      resetInputs: () => { for (const [id, queue] of this.inputs) {
+        queue.commands.length = 0;
+        const p = this.state.players.get(id); if (p) p.ack = queue.last;
+      } },
       privateCodes: (id, data) => this.clients.find(c => c.sessionId === id)?.send('codeView', data),
       notice: (id, text) => this.clients.find(c => c.sessionId === id)?.send('notice', text),
       privateDuel: (id, data) => this.clients.find(c => c.sessionId === id)?.send('duelPrivate', data),
@@ -505,6 +509,7 @@ export class TournamentRoom extends Room<WinterState> {
         return p ? [[id, p] as [string, PlayerState]] : [];
       })
       .sort(([, a], [, b]) => {
+        if (this.state.mode === 'codehunt') return b.score - a.score || a.tieOrder - b.tieOrder;
         if (a.out !== b.out) return Number(a.out) - Number(b.out);
         if (a.qualified !== b.qualified) return Number(b.qualified) - Number(a.qualified);
         if (a.qualified && b.qualified)
@@ -524,7 +529,7 @@ export class TournamentRoom extends Room<WinterState> {
   private completeStage(reason: string): void {
     if (this.state.phase !== 'playing') return;
     const ranked = this.ranked();
-    const eligible = ranked.filter(([, p]) => !p.out && p.connected);
+    const eligible = ranked.filter(([, p]) => p.connected && (this.state.mode === 'codehunt' || !p.out));
     let passing = eligible.slice(0, this.state.quota).map(([id]) => id);
     if (this.state.format === 'squad')
       passing =
@@ -534,9 +539,14 @@ export class TournamentRoom extends Room<WinterState> {
               .filter(([, p]) => !['hunt', 'giftrace'].includes(this.state.mode) || p.qualified)
               .map(([id]) => id);
     if (this.state.mode === 'crab' && reason !== 'boss-defeated') passing = [];
+    if (this.state.mode === 'codehunt') {
+      passing = codeHuntWinnerIds(ranked.map(([id,p]) => ({id,score:p.score,connected:p.connected,observer:p.observer})));
+    }
     ranked.forEach(([id, p], index) => {
-      p.rank = index + 1;
-      p.totalScore += Math.max(0, this.roster.length - index) * 10;
+      p.rank = this.state.mode === 'codehunt' ? ranked.findIndex(([,q]) => q.score === p.score) + 1 : index + 1;
+      if (this.state.mode === 'codehunt') p.totalScore = p.score;
+      else p.totalScore += Math.max(0, this.roster.length - index) * 10;
+      if (this.state.mode === 'codehunt' && passing.includes(id)) { p.out = false; p.hp = 100; }
       p.qualified = passing.includes(id);
       if (!p.qualified) this.eliminate(id);
     });
@@ -591,6 +601,7 @@ export class TournamentRoom extends Room<WinterState> {
       const cmd = this.inputs.get(id)?.commands.shift();
       if (cmd) p.ack = cmd.seq;
       if (p.observer || p.out || p.qualified) continue;
+      if (this.state.mode === 'codehunt' && this.state.codeStage === 'break') continue;
       if (this.state.mode === 'wallduel') { this.controller?.input?.(id, p.connected ? cmd : undefined); continue; }
       if (this.state.mode === 'knockout') {
         if (p.connected && cmd) this.controller?.aim?.(id, cmd.yaw, cmd.knockoutPower ?? 5, cmd.knockoutTurn ?? 0);
@@ -600,7 +611,7 @@ export class TournamentRoom extends Room<WinterState> {
     }
     this.controller?.update(STEP);
     if (this.state.phase !== 'playing') return;
-    if (!this.alive().length) {
+    if (this.state.mode !== 'codehunt' && !this.alive().length) {
       this.completeStage('all-out');
       return;
     }

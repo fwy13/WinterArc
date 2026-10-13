@@ -1,7 +1,6 @@
 import type Database from 'better-sqlite3';
 import { randomUUID } from 'node:crypto';
-import type { FundConfig, FundEntry, FundReport } from 'winterarc-profile';
-import { fetchBankIncome, normalizeBankContent } from './BankTransactions.js';
+import type { FundEntry, FundReport } from 'winterarc-profile';
 import { AccountError } from './errors.js';
 const text=(v:unknown,max:number)=>{if(typeof v!=='string'||v.length>max||/[\u0000-\u001f]/.test(v))throw new AccountError(400,'FUND_INVALID');return v.trim();};
 const url=(v:unknown)=>{const s=text(v,500);if(s){try{const u=new URL(s);if(u.protocol!=='https:'||u.username||u.password)throw 0;}catch{throw new AccountError(400,'FUND_URL');}}return s;};
@@ -20,62 +19,12 @@ export class FundStore {
     })();
     db.prepare('INSERT OR IGNORE INTO fund_config(id,data) VALUES(1,?)').run(JSON.stringify({bank:'',accountNumber:'',accountName:'',paymentUrl:'',note:'',goal:0}));
   }
-  private bankSync: Promise<void> | null = null;
-  private nextBankSync = 0;
-  private lastSyncedAt: number | null = null;
-  private bankStatus: 'not_configured' | 'syncing' | 'ok' | 'error' = 'not_configured';
-
-  async syncBankIncome(): Promise<void> {
-    if (this.bankSync) return this.bankSync;
-    if (Date.now() < this.nextBankSync) return;
-    const base = process.env.FUND_BANK_API_URL?.trim();
-    const token = process.env.FUND_BANK_API_TOKEN?.trim();
-    const account = process.env.FUND_BANK_ACCOUNT?.trim();
-    const rawKeyword = process.env.FUND_BANK_KEYWORD ?? 'WinterArc';
-    const keyword = normalizeBankContent(rawKeyword);
-    if (!base || !token || !account || (rawKeyword.trim() && !keyword)) {
-      this.bankStatus = 'not_configured'; return;
-    }
-    this.bankStatus = 'syncing';
-    this.bankSync = fetchBankIncome(base, token, account, keyword).then(entries => {
-      this.db.transaction(() => {
-        const find = this.db.prepare('SELECT * FROM fund_entries WHERE id=?');
-        const insert = this.db.prepare(`INSERT INTO fund_entries
-          (id,kind,amount,title,date,receipt,created,source,senderName,message,reference,transactionAt)
-          VALUES (?,'income',?,?,?,'',?,'bank',?,?,?,?)`);
-        const update = this.db.prepare(`UPDATE fund_entries SET amount=?,title=?,date=?,source='bank',senderName=?,message=?,reference=?,transactionAt=? WHERE id=?`);
-        for (const e of entries) {
-          const old = find.get(e.id) as FundEntry | undefined;
-          const title = e.message || 'Ủng hộ Winter Arc';
-          if (!old) {
-            insert.run(e.id,e.amount,title,e.date,Date.now(),e.senderName,e.message,e.reference,e.transactionAt);
-            this.audit('bank-sync','fund-bank-import',e.id);
-          } else {
-            if (old.kind !== 'income' || old.source !== 'bank') throw new Error('BANK_ID_CONFLICT');
-            // Enrich older imported rows, including rows already named by the previous version.
-            // Updating metadata never resets voided/voidReason.
-            if (old.amount!==e.amount || old.title!==title || old.date!==e.date || old.senderName!==e.senderName || old.message!==e.message || old.reference!==e.reference || old.transactionAt!==e.transactionAt) {
-              update.run(e.amount,title,e.date,e.senderName,e.message,e.reference,e.transactionAt,e.id);
-              this.audit('bank-sync','fund-bank-update',JSON.stringify({id:e.id,previousAmount:old.amount,amount:e.amount}));
-            }
-          }
-        }
-      })();
-      this.lastSyncedAt = Date.now(); this.bankStatus = 'ok';
-      this.nextBankSync = Date.now() + 60000;
-    }).catch(() => {
-      this.bankStatus = 'error'; this.nextBankSync = Date.now() + 15000;
-      throw new AccountError(502,'FUND_BANK_UNAVAILABLE');
-    }).finally(() => { this.bankSync = null; });
-    return this.bankSync;
-  }
-
-  report(page=0, includeLegacy=false):FundReport {
+  report(page=0):FundReport {
     page=Math.max(0,Math.min(100000,Math.floor(Number(page)||0)));
     const c=this.db.prepare('SELECT data,revision FROM fund_config WHERE id=1').get() as {data:string;revision:number};
-    const visible = includeLegacy ? '1=1' : "((kind='income' AND source='bank') OR (kind='expense' AND source='manual'))";
-    const sum=this.db.prepare("SELECT COALESCE(SUM(CASE WHEN kind='income' THEN amount ELSE 0 END),0) income, COALESCE(SUM(CASE WHEN kind='expense' THEN amount ELSE 0 END),0) expense FROM fund_entries WHERE voided=0 AND ((kind='income' AND source='bank') OR (kind='expense' AND source='manual'))").get() as {income:number;expense:number};
-    return {config:{...JSON.parse(c.data),revision:c.revision},entries:this.db.prepare(`SELECT * FROM fund_entries WHERE ${visible} ORDER BY date DESC,transactionAt DESC,created DESC,id LIMIT 25 OFFSET ?`).all(page*25) as FundEntry[],total:(this.db.prepare(`SELECT COUNT(*) n FROM fund_entries WHERE ${visible}`).get() as {n:number}).n,page,...sum,balance:sum.income-sum.expense,bankSync:{status:this.bankStatus,lastSyncedAt:this.lastSyncedAt}};
+    const visible = '1=1';
+    const sum=this.db.prepare("SELECT COALESCE(SUM(CASE WHEN kind='income' THEN amount ELSE 0 END),0) income, COALESCE(SUM(CASE WHEN kind='expense' THEN amount ELSE 0 END),0) expense FROM fund_entries WHERE voided=0").get() as {income:number;expense:number};
+    return {config:{...JSON.parse(c.data),revision:c.revision},entries:this.db.prepare(`SELECT * FROM fund_entries WHERE ${visible} ORDER BY date DESC,transactionAt DESC,created DESC,id LIMIT 25 OFFSET ?`).all(page*25) as FundEntry[],total:(this.db.prepare(`SELECT COUNT(*) n FROM fund_entries WHERE ${visible}`).get() as {n:number}).n,page,...sum,balance:sum.income-sum.expense};
   }
   configure(actor:string,value:Record<string,unknown>):void {
     const c={bank:text(value.bank,80),accountNumber:text(value.accountNumber,80),accountName:text(value.accountName,100),paymentUrl:url(value.paymentUrl),note:text(value.note,400),goal:value.goal};
@@ -86,13 +35,12 @@ export class FundStore {
     })();
   }
   add(actor:string,value:Record<string,unknown>):void {
-    if(value.kind !== 'expense') throw new AccountError(400,'FUND_EXPENSE_ONLY');
-    const e={id:text(value.id,36),kind:value.kind,amount:value.amount,title:text(value.title,160),date:text(value.date,10),receipt:url(value.receipt)};
+    const e={id:text(value.id,36),kind:value.kind,amount:value.amount,title:text(value.title,160),date:text(value.date,10),receipt:url(value.receipt),senderName:text(value.senderName ?? '',100),message:text(value.message ?? '',400)};
     if(!/^[0-9a-f-]{36}$/i.test(e.id)||!['income','expense'].includes(String(e.kind))||!Number.isSafeInteger(e.amount)||Number(e.amount)<=0||Number(e.amount)>1e9||!e.title||!/^\d{4}-\d{2}-\d{2}$/.test(e.date)||!Number.isFinite(Date.parse(e.date))||new Date(e.date).toISOString().slice(0,10)!==e.date)throw new AccountError(400,'FUND_INVALID');
     this.db.transaction(()=>{
       const old=this.db.prepare('SELECT * FROM fund_entries WHERE id=?').get(e.id) as FundEntry|undefined;
-      if(old){if(old.kind!==e.kind||old.amount!==e.amount||old.title!==e.title||old.date!==e.date||old.receipt!==e.receipt)throw new AccountError(409,'FUND_CONFLICT');return;}
-      this.db.prepare('INSERT INTO fund_entries(id,kind,amount,title,date,receipt,created) VALUES(?,?,?,?,?,?,?)').run(e.id,e.kind,e.amount,e.title,e.date,e.receipt,Date.now());
+      if(old){if(old.kind!==e.kind||old.amount!==e.amount||old.title!==e.title||old.date!==e.date||old.receipt!==e.receipt||old.source!=='manual'||(old.senderName||'')!==e.senderName||(old.message||'')!==e.message)throw new AccountError(409,'FUND_CONFLICT');return;}
+      this.db.prepare(`INSERT INTO fund_entries(id,kind,amount,title,date,receipt,created,senderName,message,source) VALUES(?,?,?,?,?,?,?,?,?,'manual')`).run(e.id,e.kind,e.amount,e.title,e.date,e.receipt,Date.now(),e.senderName,e.message);
       this.audit(actor,'fund-add',e.id);
     })();
   }
@@ -104,15 +52,11 @@ export class FundStore {
     })();
   }
   async resetEntries(actor: string, scope: unknown, confirmation: unknown): Promise<{ deleted: number }> {
-    if (typeof scope !== 'string' || !['legacy', 'manual', 'all'].includes(scope) || confirmation !== 'XOA THU CHI') {
+    if (typeof scope !== 'string' || !['income', 'manual', 'all'].includes(scope) || confirmation !== 'XOA THU CHI') {
       throw new AccountError(400, 'FUND_RESET_CONFIRM');
     }
-    // Let an in-flight import finish before deleting; it must not restore rows after reset.
-    if (this.bankSync) {
-      try { await this.bankSync; } catch { /* Cached rows can still be reset. */ }
-    }
-    const predicate = scope === 'legacy'
-      ? "source='manual' AND kind='income'"
+    const predicate = scope === 'income'
+      ? "kind='income'"
       : scope === 'manual' ? "source='manual'" : '1=1';
     const deleted = this.db.transaction(() => {
       const counts = this.db.prepare(`SELECT COUNT(*) count,
@@ -123,10 +67,6 @@ export class FundStore {
       this.audit(actor, 'fund-reset', JSON.stringify({ scope, deleted: result.changes, totals: counts }));
       return Number(result.changes);
     })();
-    if (scope === 'all') {
-      this.lastSyncedAt = null;
-      this.nextBankSync = 0;
-    }
     return { deleted };
   }
 

@@ -236,11 +236,6 @@ export function accountRoutes(allowedOrigins: string[]): Router {
   router.get(
     '/fund',
     route(async (req, res) => {
-      try {
-        await store.funds.syncBankIncome();
-      } catch {
-        // Keep serving the persisted ledger; report() includes bankSync.status='error'.
-      }
       res.json(store.funds.report(Number(req.query.page)));
     }),
   );
@@ -248,12 +243,7 @@ export function accountRoutes(allowedOrigins: string[]): Router {
     '/admin/fund',
     route(async (req, res) => {
       admin(req);
-      try {
-        await store.funds.syncBankIncome();
-      } catch {
-        // The admin can still record expenses while the bank API is unavailable.
-      }
-      res.json(store.funds.report(Number(req.query.page), true));
+      res.json(store.funds.report(Number(req.query.page)));
     }),
   );
   router.post(

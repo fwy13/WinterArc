@@ -17,10 +17,6 @@ services:
       ADMIN_USERNAME: ${ADMIN_USERNAME:-}
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
       COOKIE_SAME_SITE: ${COOKIE_SAME_SITE:-lax}
-      FUND_BANK_API_URL: ${FUND_BANK_API_URL:-}
-      FUND_BANK_API_TOKEN: ${FUND_BANK_API_TOKEN:-}
-      FUND_BANK_ACCOUNT: ${FUND_BANK_ACCOUNT:-}
-      FUND_BANK_KEYWORD: ${FUND_BANK_KEYWORD:-WinterArc}
     volumes:
       - accounts:/data
     expose:

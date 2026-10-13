@@ -198,6 +198,7 @@ export class GameEngine {
       this.noa.camera.heading = 0;
       this.noa.camera.pitch = snapshot.mode === 'knockout' ? .65 : 0;
     }
+    if (snapshot.mode === 'codehunt' && before?.codeHunt.turn !== snapshot.codeHunt.turn) { this.players.reset(); this.input.clear(); this.playerCamera.reset(); this.noa.camera.heading=0; this.noa.camera.pitch=0; }
     const me = snapshot.players.find((p) => p.id === snapshot.selfId),
       active = snapshot.phase !== 'lobby';
 
@@ -205,11 +206,11 @@ export class GameEngine {
       this.players.reconcile(
         me,
         this.map.world,
-        snapshot.mode === 'wallduel' || snapshot.mode === 'knockout' || snapshot.phase !== 'playing' || me.hp <= 0 || me.out || me.qualified,
+        (snapshot.mode === 'codehunt' && snapshot.codeHunt.stage === 'break') || snapshot.mode === 'wallduel' || snapshot.mode === 'knockout' || snapshot.phase !== 'playing' || me.hp <= 0 || me.out || me.qualified,
         snapshot.mode !== 'knockout' && snapshot.mode !== 'wallduel',
       );
     else if (!active) this.preview();
-    this.players.sync(snapshot.mode === 'wallduel' ? [] : snapshot.players, snapshot.selfId, active, snapshot.mode === 'codehunt' && snapshot.phase === 'playing' && snapshot.codeView?.epoch === codeEpoch(snapshot.elapsed) ? snapshot.codeView : undefined);
+    this.players.sync(snapshot.mode === 'wallduel' ? [] : snapshot.players, snapshot.selfId, active, snapshot.mode === 'codehunt' && snapshot.phase === 'playing' && snapshot.codeHunt.stage === 'hunt' && snapshot.codeView?.turn === snapshot.codeHunt.turn && snapshot.codeView.epoch === codeEpoch(snapshot.elapsed-snapshot.codeHunt.startedAt) ? snapshot.codeView : undefined);
     this.refreshInput();
     if (before?.phase !== snapshot.phase && snapshot.phase !== 'playing') this.setPaused(true);
   }
@@ -245,6 +246,7 @@ export class GameEngine {
       this.online &&
       !this.paused &&
       s?.phase === 'playing' &&
+      !(s.mode === 'codehunt' && s.codeHunt.stage === 'break') &&
       me &&
       !me.observer &&
       me.hp > 0 &&
@@ -302,7 +304,7 @@ export class GameEngine {
     }
     this.callbacks.input(cmd);
     const me = this.snapshot.players.find((p) => p.id === this.snapshot?.selfId);
-    if (this.mode.id !== 'knockout' && this.mode.id !== 'wallduel' && me && me.hp > 0 && !me.out && !me.qualified) this.players.predict(cmd, this.map.world);
+    if (!(this.mode.id === 'codehunt' && this.snapshot.codeHunt.stage === 'break') && this.mode.id !== 'knockout' && this.mode.id !== 'wallduel' && me && me.hp > 0 && !me.out && !me.qualified) this.players.predict(cmd, this.map.world);
     if (
       (this.mode.id === 'crab' || this.mode.id === 'icebreak') &&
       this.input.attacking &&

@@ -78,11 +78,13 @@ export interface ShotEvent {
 }
 export interface DuelPrivate { round: number; turn: number; x: number; pose: number }
 export interface CodeView {
+  turn: number;
   round: number;
   epoch: number;
   visible: { id: string; code: string }[];
 }
 export interface Snapshot {
+  codeHunt: { turn: number; stage: string; remaining: number; startedAt: number };
   codeView?: CodeView;
   duel: { hunterId: string; hiderId: string; stage: string; turn: number; ammo: number; remaining: number; yaw: number; pitch: number; charge: number; self?: DuelPrivate };
   modeSelection: ModeSelection;
