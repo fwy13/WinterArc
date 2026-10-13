@@ -236,19 +236,32 @@ export function accountRoutes(allowedOrigins: string[]): Router {
   router.get(
     '/fund',
     route(async (req, res) => {
-      let bankSyncFailed = false;
-
       try {
         await store.funds.syncBankIncome();
       } catch {
-        bankSyncFailed = true;
+        // Keep serving the persisted ledger; report() includes bankSync.status='error'.
       }
-
-      // API ngân hàng lỗi vẫn trả sổ thu chi đã lưu.
-      res.json({
-        ...store.funds.report(Number(req.query.page)),
-        bankSyncFailed,
-      });
+      res.json(store.funds.report(Number(req.query.page)));
+    }),
+  );
+  router.get(
+    '/admin/fund',
+    route(async (req, res) => {
+      admin(req);
+      try {
+        await store.funds.syncBankIncome();
+      } catch {
+        // The admin can still record expenses while the bank API is unavailable.
+      }
+      res.json(store.funds.report(Number(req.query.page), true));
+    }),
+  );
+  router.post(
+    '/admin/fund/reset',
+    route(async (req, res) => {
+      const actor = store.adminAuth.requireHash(admin(req));
+      const result = await store.funds.resetEntries(actor, req.body?.scope, req.body?.confirmation);
+      res.json(result);
     }),
   );
   router.post(

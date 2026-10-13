@@ -1,0 +1,10 @@
+.support-entry-title>strong { display:block;font-size:12px;font-weight:700; }
+.support-donor-message,.fund-donor-message { display:block;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere;color:#8c7b72;font-size:11px;line-height:1.6; }
+.support-sync { display:grid;gap:4px;margin:0 2px 12px;font-size:11px;color:#98795f; }
+.support-voided .support-donor-message { text-decoration:line-through; }
+.support-bank img { max-width:100%;height:auto;border-radius:8px; }
+
+.fund-reset { margin:24px 0;border:1px solid #ebc1bc;border-radius:12px;padding:14px;background:#fff8f6; }
+.fund-reset summary { cursor:pointer;font-size:13px;font-weight:700;color:#a23d35;min-height:32px; }
+.fund-reset p { font-size:12px;line-height:1.7;margin:10px 0;color:#8f4b40; }
+.fund-reset button[type="submit"] { background:#a23d35;color:white;border-color:#a23d35; }

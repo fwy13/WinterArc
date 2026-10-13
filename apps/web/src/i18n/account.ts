@@ -6,7 +6,7 @@ export const accountVi = {
   "account.rank": "Xếp hạng",
   "account.tournaments": "Giải đấu",
   "account.admin": "Quản trị",
-  "account.login": "Đăng nhập Google",
+  "account.login": "Đăng nhập",
   "account.loginHint": "Đăng nhập Google để chơi, lưu hồ sơ và tích lũy phần thưởng.",
   "account.googleMissing": "Chưa cấu hình Google Client ID ở server.",
   "account.loginRetry": "Đăng nhập chưa thành công. Bấm để thử lại.",
