@@ -102,6 +102,10 @@ export class InputManager {
   }
   sample(seq: number, round: number): InputCommand {
     this.updateTouchLook();
+    if (document.activeElement instanceof HTMLInputElement && document.activeElement.id === 'code-guess') {
+      this.clear();
+      return { seq, round, forward: 0, side: 0, jump: false, sprint: false, yaw: this.noa.camera.heading, pitch: this.noa.camera.pitch };
+    }
     if (touchInput.interact) {
       touchInput.interact = false;
       if (this.enabled) this.onInteract();

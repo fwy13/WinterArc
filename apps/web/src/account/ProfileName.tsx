@@ -21,7 +21,7 @@ export default function ProfileName({
   return (
     <span className="inline-flex min-w-0 max-w-full items-center gap-2 align-middle text-left">
       <AvatarPhoto player={player} />
-      <span className="min-w-0 flex-1 flex gap-2">
+      <span className="min-w-0 flex-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
         <span
           className={`block whitespace-normal wrap-anywhere leading-snug ${player.premium ? 'font-bold text-amber-700' : ''}`}
           title={player.name}
@@ -29,9 +29,9 @@ export default function ProfileName({
           {player.name}
           {player.premium ? ' ★' : ''}
         </span>
-        {player.roles?.includes('club') && <img src={CLUB.mark} alt="CLB" title={t('social.role.club')} className="h-8 w-8 shrink-0 rounded-full bg-[#07314c] p-1" />}
+        {player.roles?.includes('club') && <img src={CLUB.mark} alt="CLB" title={t('social.role.club')} className="inline-block h-[1.1em] w-[1.1em] shrink-0 self-center rounded-full bg-[#07314c] p-[2px] align-middle" />}
         {showRoles && (
-          <span className="mt-0.5 flex flex-wrap gap-1">
+          <span className="flex flex-wrap items-center gap-1">
             {(player.roles || [])
               .filter((r): r is ProfileRole => r !== 'club' && PROFILE_ROLES.includes(r as ProfileRole))
               .map((role) => (

@@ -5,6 +5,22 @@ import { adminVi } from './admin';
 import { socialVi } from './social';
 import { accountVi } from './account';
 export const vi = {
+  "games.codehunt.title": "Săn mật mã",
+  "games.codehunt.tag": "ẨN NẤP · QUAN SÁT · 4 CHỮ SỐ",
+  "games.codehunt.description": "Len lỏi qua 16 căn nhà. Nhìn mã trên trán đối thủ và nhập đúng để loại họ!",
+  "games.codehunt.help": "Cần ít nhất 2 người. Có 15 giây ẩn nấp; sau đó mã 4 chữ số xuất hiện trên trán và đổi mỗi 30 giây. Quay mặt vào tường hoặc quay lưng để giấu mã. Nhìn chính diện đối thủ trong 18m, nhập mã rồi Enter để loại họ. Mỗi lần thử cách nhau 1,2 giây. Người sống cuối thắng; hết 180 giây, xếp người còn sống theo số lần loại đối thủ, hòa dùng thứ tự bốc thăm của trận.",
+  "ingame.codehunt.label": "Săn mật mã",
+  "ingame.codehunt.hint": "Giấu trán · Đọc mã đối thủ",
+  "codehunt.minimum": "Săn mật mã cần ít nhất 2 người chơi.",
+  "codehunt.hide": "Tìm chỗ nấp! Mã chưa xuất hiện.",
+  "codehunt.reveal": "Mã đang hiện trên trán! Đếm ngược tới lần đổi mã.",
+  "codehunt.input": "Mã 4 số của đối thủ",
+  "codehunt.send": "Loại",
+  "codehunt.keyboard": "Khi đang điều khiển: gõ 4 số → Enter. Backspace để sửa.",
+  "codehunt.touch": "Chạm ô để nhập mã, rồi nhấn Loại. Bạn đứng yên khi nhập.",
+  "codehunt.rules": "Phải còn nhìn thấy mặt đối thủ trong 18m khi gửi. Chờ 1,2 giây giữa các lần thử.",
+  "codehunt.miss": "Không trúng: mã sai, đã đổi hoặc đối thủ đã khuất tầm nhìn.",
+  "codehunt.hit": "Đã loại đối thủ!",
   "account.error.EMAILS_LIMIT": "Tối đa 1.000 email CLB.",
   "social.role.club": "Thành viên CLB",
   "games.wallduel.title": "Wall Duel",
@@ -307,7 +323,7 @@ export const vi = {
   'games.giftrace.title': 'Đường đua giao quà',
   'games.giftrace.tag': 'PARKOUR · ĐUA TỐC ĐỘ',
   'games.giftrace.description':
-    'Mang quà qua những cây cầu tuyết, vượt checkpoint rồi giao cho ông già Noel.',
+    'Vượt làn băng hẹp, né cọc, nhảy qua rào và luồn đường zíc-zắc để giao quà cho ông già Noel.',
   'games.giftrace.help':
     'Chạm các checkpoint theo thứ tự rồi tương tác với Santa để giao quà. Điểm tiếp theo được làm nổi bật. Rơi xuống sẽ trở lại checkpoint. Cá nhân: giao trước để thắng; hết giờ xét tiến độ. Nhóm: người giao xong cùng thắng.',
   'floor.stand': 'ĐỨNG VÀO MÀU',

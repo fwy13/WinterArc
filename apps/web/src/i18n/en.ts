@@ -7,6 +7,22 @@ import { accountEn } from './account';
 import { vi, type TranslationKey } from './vi';
 export const en: Record<TranslationKey, string> = {
   ...vi, // Fallback first; English translations below take precedence.
+  "games.codehunt.title": "Code Hunt",
+  "games.codehunt.tag": "HIDE · OBSERVE · FOUR DIGITS",
+  "games.codehunt.description": "Hide among 16 houses. Read an opponent’s forehead code and type it to eliminate them!",
+  "games.codehunt.help": "At least 2 players. Hide for 15 seconds, then four-digit forehead codes appear and change every 30 seconds. Face a wall or turn away to hide your code. Read an opponent’s face within 18m, type the code and press Enter. Attempts have a 1.2-second cooldown. Last survivor wins; after 180 seconds, living players rank by eliminations, with ties using the match’s shuffled order.",
+  "ingame.codehunt.label": "Code Hunt",
+  "ingame.codehunt.hint": "Hide your forehead · Read their code",
+  "codehunt.minimum": "Code Hunt requires at least 2 players.",
+  "codehunt.hide": "Find cover! Codes are still hidden.",
+  "codehunt.reveal": "Codes are visible! Countdown to the next code change.",
+  "codehunt.input": "Opponent’s four-digit code",
+  "codehunt.send": "Eliminate",
+  "codehunt.keyboard": "While controlling your player: type four digits → Enter. Backspace to edit.",
+  "codehunt.touch": "Tap to type, then Eliminate. You stand still while typing.",
+  "codehunt.rules": "Keep their face visible within 18m when submitting. Wait 1.2 seconds between attempts.",
+  "codehunt.miss": "Miss: wrong or expired code, or the opponent is no longer visible.",
+  "codehunt.hit": "Opponent eliminated!",
   "social.role.club": "Club member",
   "games.wallduel.title": "Wall Duel",
   "games.wallduel.tag": "1 VS 1 · LASER AND DODGE",
@@ -175,7 +191,7 @@ export const en: Record<TranslationKey, string> = {
   'games.giftrace.title': 'Santa Gift Run',
   'games.giftrace.tag': 'PARKOUR · RACE',
   'games.giftrace.description':
-    'Carry a gift across snowy bridges, pass checkpoints and deliver it to Santa.',
+    'Cross narrow ice lanes, dodge posts, jump hurdles and weave through the final chicane to deliver your gift.',
   'games.giftrace.help':
     'Reach checkpoints in order, following the highlighted next marker, then interact with Santa. Falling returns you to your checkpoint. Solo: deliver first; timeout ranks progress. Co-op: all finishers win together.',
   'games.crab.help':

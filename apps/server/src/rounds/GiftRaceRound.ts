@@ -13,7 +13,7 @@ export class GiftRaceRound implements RoundController {
       const route = world.race;
       if (p.y <= world.loseY) {
         const spawn = p.checkpoint ? route.checkpoints[p.checkpoint - 1] : world.spawn(this.context.roster.indexOf(id));
-        Object.assign(p, { x: spawn.x, y: spawn.y, z: spawn.z, vy: 0 });
+        Object.assign(p, { x: spawn.x, y: spawn.y, z: spawn.z, vy: 0, vx: 0, vz: 0 });
         p.deaths = Math.min(255, p.deaths + 1);
       }
       const next = route.checkpoints[p.checkpoint];

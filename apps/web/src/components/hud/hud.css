@@ -142,3 +142,9 @@
 .knockout-power :disabled { cursor:default; }
 
 .hud-touch-button--jump { width:68px; height:68px; border-radius:50%; border:2px solid #b6efd6; font-size:12px; background:#173d44d0; }
+
+/* Keep the phase timer and numeric entry visible on touch devices. */
+.game-hud--touch .codehunt-hud .hud-objective-heading { display:flex; font-size:11px; }
+.game-hud--touch .codehunt-hud .codehunt-status { display:block; font-size:10px; margin:3px 0; }
+.codehunt-hud button { border:1px solid #74e0ce80; border-radius:8px; min-width:52px; color:#b8fff0; background:#163d46; }
+.codehunt-hud input:focus-visible,.codehunt-hud button:focus-visible { outline:2px solid #74e0ce; outline-offset:2px; }

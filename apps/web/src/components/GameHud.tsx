@@ -1,3 +1,4 @@
+import CodeHuntHud from './CodeHuntHud';
 import WallDuelHud from './WallDuelHud';
 import KnockoutHud from './KnockoutHud';
 import { CLUB } from '../config/club';
@@ -9,8 +10,8 @@ import ModeHint from './ModeHint';
 import HudIcon from './hud/HudIcon';
 import './hud/hud.css';
 
-export function HudLayout({ state: s, candidate = false, touch = false }: {
-  state: Snapshot; candidate?: boolean; touch?: boolean;
+export function HudLayout({ state: s, candidate = false, touch = false, onCodeGuess }: {
+  state: Snapshot; candidate?: boolean; touch?: boolean; onCodeGuess?: (code: string) => void;
 }) {
   const { t } = useI18n();
   const me = s.players.find(p => p.id === s.selfId);
@@ -27,6 +28,7 @@ export function HudLayout({ state: s, candidate = false, touch = false }: {
     : (s.mode === 'icebreak' || s.mode === 'knockout') && s.ice.shrinkIn > 0 && s.ice.shrinkIn <= 3;
   if (s.mode === 'wallduel') return <WallDuelHud state={s} touch={touch} />;
   return <div className={`game-hud ${touch ? 'game-hud--touch' : ''}`} data-mode={s.mode}>
+    {s.mode === 'codehunt' && playing && active && <CodeHuntHud key={s.round} state={s} touch={touch} onGuess={onCodeGuess} />}
     {s.mode === 'knockout' && playing && s.knockout && <KnockoutHud state={s} active={active} />}
     <section className="hud-identity hud-surface">
       <span className="hud-mode-icon hud-club-mark"><img src={CLUB.mark} width={32} height={32} alt={CLUB.name} /></span>
@@ -37,7 +39,7 @@ export function HudLayout({ state: s, candidate = false, touch = false }: {
       <div className="hud-alive"><HudIcon name="players" /><span>{alive}<small> / {s.entrants}</small></span><span className="hud-alive-label">{t('cup.remaining')}</span></div>
     </section>
 
-    {playing && s.mode !== 'knockout' && (active || s.mode === 'crab' || s.mode === 'colorfall') && <section className={`hud-objective hud-surface ${urgent ? 'is-urgent' : ''}`}>
+    {playing && s.mode !== 'knockout' && s.mode !== 'codehunt' && (active || s.mode === 'crab' || s.mode === 'colorfall') && <section className={`hud-objective hud-surface ${urgent ? 'is-urgent' : ''}`}>
       <div className="hud-objective-heading"><span className="hud-eyebrow">{t(`ingame.${s.mode}.label`)}</span><span className="hud-live-dot" /></div>
       {(s.mode === 'hunt' || s.mode === 'giftrace') && <>
         <div className="hud-objective-value"><strong>{progress}<small> / {goal}</small></strong><span>{t(s.mode === 'hunt' ? 'hud.found' : 'hud.checkpoint')}</span></div>
@@ -75,7 +77,7 @@ export function HudLayout({ state: s, candidate = false, touch = false }: {
     {playing && me && !active && <div className="hud-result-tag hud-surface" role="status"><HudIcon name={me.qualified ? 'check' : 'players'} /><div><strong>{t(me.observer ? 'account.spectating' : me.out ? 'cup.eliminated' : me.qualified ? 'cup.qualified' : 'account.spectating')}</strong><span>{t('cup.watch')}</span></div></div>}
   </div>;
 }
-export default function GameHud(props: { state: Snapshot; candidate: boolean }) {
+export default function GameHud(props: { state: Snapshot; candidate: boolean; onCodeGuess?: (code: string) => void }) {
   const touch = useTouchControls();
   return <HudLayout {...props} touch={touch} />;
 }

@@ -31,7 +31,7 @@ export default function ResultPanel({ state: s, onstart, onleave, onready, onMod
   const ranked = !!me && !me.observer && me.rank > 0;
   const ready = players.filter(p => p.ready).length;
   const complete = !!s.tournamentId && s.tournamentCompleted >= s.tournamentRounds;
-  const canStart = (s.modeSelection !== 'wallduel' || players.length === 2) && players.length >= (s.tournamentId ? 2 : 1) && ready === players.length && !complete;
+  const canStart = (s.modeSelection !== 'wallduel' || players.length === 2) && players.length >= (s.tournamentId || s.modeSelection === 'codehunt' ? 2 : 1) && ready === players.length && !complete;
   const personalTitle = won ? (vi ? 'Chiến thắng!' : 'Victory!')
     : ranked ? (vi ? 'Hẹn lượt phục thù!' : 'Time for a rematch!')
     : (vi ? 'Trận đấu khép lại' : 'Match complete');
@@ -94,7 +94,7 @@ export default function ResultPanel({ state: s, onstart, onleave, onready, onMod
                 {enabledModes.map(id => <option key={id} value={id}>{t(`games.${id}.title`)}</option>)}
               </select></label>
               <label>{t('menu.format')}<select disabled={!host || !!s.tournamentId} value={s.format} onChange={e => onFormat(e.target.value as MatchFormat)}>
-                <option value="solo">{t('format.solo')}</option><option value="squad" disabled={(s.mode === 'knockout' || s.mode === 'wallduel')}>{t('format.squad')}</option>
+                <option value="solo">{t('format.solo')}</option><option value="squad" disabled={(s.mode === 'knockout' || s.mode === 'wallduel' || s.mode === 'codehunt')}>{t('format.squad')}</option>
               </select></label>
             </div>
           </div>

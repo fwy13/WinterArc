@@ -1,3 +1,6 @@
+import { ForeheadCode } from './ForeheadCode';
+import { canReadCode } from 'winterarc-gameplay';
+import type { CodeView } from 'winterarc-protocol';
 import { CharacterModel } from './CharacterModel';
 import { PROFILE_ROLES, type ProfileRole } from 'winterarc-profile';
 import { t } from '../i18n';
@@ -16,6 +19,8 @@ interface Avatar {
   root: TransformNode;
   model: CharacterModel;
   nameplate: PlayerNameplate;
+  forehead: ForeheadCode;
+  code: string;
   target: PlayerSnapshot;
   placed: boolean;
 
@@ -97,13 +102,14 @@ export class PlayerManager {
 
     this.noa.ents.setPosition(this.noa.playerEntity, [this.local.x, this.local.y, this.local.z]);
   }
-  sync(players: PlayerSnapshot[], self: string, active: boolean): void {
+  sync(players: PlayerSnapshot[], self: string, active: boolean, codes?: CodeView): void {
     const keep = new Set<string>();
     for (const p of players) {
       if (p.id === self) continue;
       keep.add(p.id);
       let a = this.avatars.get(p.id);
       if (a && (a.target.color !== p.color || a.target.skinId !== p.skinId)) {
+        a.forehead.dispose();
         a.nameplate.dispose();
         a.root.dispose();
         this.avatars.delete(p.id);
@@ -114,6 +120,8 @@ export class PlayerManager {
         this.avatars.set(p.id, a);
       }
       a.target = p;
+      a.code = codes?.visible.find(entry => entry.id === p.id)?.code ?? '';
+      a.forehead.setCode(a.code);
       const labels = p.roles.filter((role): role is ProfileRole => role !== 'club' && PROFILE_ROLES.includes(role as ProfileRole)).map(role => t(`social.role.${role}`));
       a.nameplate.setName(labels.length ? `${p.name} · ${labels.join(' / ')}` : p.name, p.premium, p.roles.includes('club'));
       const visible = active && !p.observer && p.connected && p.hp > 0 && !p.out;
@@ -141,6 +149,7 @@ export class PlayerManager {
     for (const [id, a] of this.avatars)
       if (!keep.has(id)) {
         this.audio.stopPlayer(id);
+        a.forehead.dispose();
         a.nameplate.dispose();
         a.root.dispose();
         this.avatars.delete(id);
@@ -150,6 +159,7 @@ export class PlayerManager {
     const stride = 1.65;
     for (const [id, avatar] of this.avatars) {
       const target = avatar.target;
+      avatar.forehead.setCode(avatar.code && this.local && canReadCode(this.local, target, world) ? avatar.code : '');
       const position = avatar.root.position;
 
       if (!avatar.root.isEnabled()) {
@@ -207,6 +217,8 @@ export class PlayerManager {
       root,
       model,
       nameplate: new PlayerNameplate(root, this.meshes, p.name),
+      forehead: new ForeheadCode(model.head, this.meshes),
+      code: '',
       target: p,
       placed: false,
       stepDistance: 0,
@@ -215,6 +227,7 @@ export class PlayerManager {
   dispose(): void {
     for (const [id, avatar] of this.avatars) {
       this.audio.stopPlayer(id);
+      avatar.forehead.dispose();
       avatar.nameplate.dispose();
       avatar.root.dispose();
     }

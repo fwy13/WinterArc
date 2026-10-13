@@ -1,3 +1,4 @@
+import { CodeHuntBuilder } from './CodeHuntBuilder.js';
 import { applyMapDocument } from './MapDocument.js';
 import { importedMaps } from './maps/generated.js';
 import type { GameId } from 'winterarc-core';
@@ -11,6 +12,7 @@ import { GiftRaceBuilder } from './GiftRaceBuilder.js';
 import type { VoxelWorld } from './VoxelWorld.js';
 export class WorldFactory {
   private static readonly builders: Record<GameId, () => VoxelWorld> = {
+    codehunt: () => new CodeHuntBuilder().build(),
     wallduel: () => new WallDuelBuilder().build(),
     knockout: () => new KnockoutBuilder().build(),
     hunt: () => new ChristmasVillageBuilder().build(),

@@ -1,5 +1,5 @@
 import type { GameId, MatchFormat, ModeSelection } from 'winterarc-core';
-import type { Snapshot, InputCommand, DuelPrivate, SoundEvent, ShotEvent } from './messages.js';
+import type { Snapshot, InputCommand, DuelPrivate, CodeView, SoundEvent, ShotEvent } from './messages.js';
 
 export interface PublicRoom {
   roomId: string;
@@ -25,6 +25,7 @@ export interface ConnectOptions {
 
 /** Typed outgoing messages; the server still validates untrusted payloads at runtime. */
 export interface ClientMessages {
+  codeGuess: { round: number; code: string };
   input: InputCommand;
   find: { round: number; target: string };
   attack: { round: number };
@@ -36,6 +37,7 @@ export interface ClientMessages {
   lobby: undefined;
 }
 export interface ServerMessages {
+  codeView: CodeView;
   duelPrivate: DuelPrivate;
   notice: string;
   sound: SoundEvent;

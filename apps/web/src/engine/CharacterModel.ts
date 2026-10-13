@@ -23,6 +23,7 @@ export class CharacterModel {
       factory.cube(this.joints[part.group], `${id}-${part.name}`, part.position, part.size, part.color);
     }
   }
+  get head(): TransformNode { return this.joints.head; }
   animate(dt: number, time: number, speed: number, grounded: boolean, pitch: number): void {
     const moving = grounded && speed > .5 && speed < 12;
     this.stride += moving ? dt * Math.min(speed * 2.2, 14) : 0;

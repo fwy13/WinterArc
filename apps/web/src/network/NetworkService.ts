@@ -3,7 +3,7 @@ import { accessTicket, refreshAccount, account } from '../account/service';
 import { Client, type Room } from 'colyseus.js';
 import { t, translateNotice } from '../i18n';
 import { createStore } from '../hooks/useStore';
-import { TOURNAMENT_ROOM, type Snapshot, type DuelPrivate, type ShotEvent, type SoundEvent } from 'winterarc-protocol';
+import { TOURNAMENT_ROOM, type Snapshot, type DuelPrivate, type CodeView, type ShotEvent, type SoundEvent } from 'winterarc-protocol';
 import { type GameId } from 'winterarc-core';
 import type { RoomState, PublicRoom, ConnectOptions, ClientMessages } from 'winterarc-protocol';
 
@@ -110,11 +110,13 @@ export class NetworkService {
     window.addEventListener('beforeunload', this.warnBeforeLeave);
     history.replaceState(null, '', `?room=${encodeURIComponent(room.roomId)}`);
     connection.set('online');
+    let codeView: CodeView | undefined;
     let duelPrivate: DuelPrivate | undefined;
     const sync = () => {
       if (this.room !== room || !room.state?.players) return;
       const s = room.state;
       const value: Snapshot = {
+        codeView: s.mode === 'codehunt' && s.phase === 'playing' && codeView?.round === s.round ? codeView : undefined,
         tournamentId: s.tournamentId,
         tournamentTitle: s.tournamentTitle,
         tournamentCapacity: s.tournamentCapacity,
@@ -226,6 +228,10 @@ export class NetworkService {
       this.onSnapshot(value);
     };
     room.onStateChange(sync);
+    room.onMessage('codeView', (data: CodeView) => {
+      if (this.room !== room) return;
+      codeView = data; sync();
+    });
     room.onMessage('duelPrivate', (data: DuelPrivate) => {
       if (this.room !== room) return;
       duelPrivate=data;sync();

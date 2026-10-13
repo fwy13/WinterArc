@@ -30,13 +30,27 @@ export class GiftRaceBuilder implements MapBuilder {
         // Serpentine ice lanes; one-voxel sideways steps still overlap by four voxels.
         const offset = Math.round(Math.sin((z + 12) * Math.PI / 14) * 2);
         if (z === -2 || z === 9) continue;
-        for (const lane of [-10, 0, 10]) kit.fill(lane + offset - 2, 8, z, lane + offset + 2, 8, z, BLOCK.ICE);
+        for (const lane of [-10, 0, 10]) kit.fill(lane + offset - 1, 8, z, lane + offset + 1, 8, z, BLOCK.ICE);
       } else {
         // Alternating bridges with crossovers for changing lanes.
         if ((z - 18) % 8 === 7) continue;
         for (const lane of [-10, 0, 10]) kit.fill(lane - 2, 8, z, lane + 2, 8, z, BLOCK.WOOD);
         if (z === 26 || z === 34) kit.fill(-12, 8, z, 12, 8, z + 1, BLOCK.SNOW);
       }
+    }
+    // Tall alternating half-lane walls force steering on the slippery section.
+    for (const lane of [-10, 0, 10]) for (const z of [-6, 4]) {
+      const offset = Math.round(Math.sin((z + 12) * Math.PI / 14) * 2);
+      const edge = lane + offset + (z < 0 ? -1 : 1);
+      kit.fill(edge, 9, z, edge, 11, z, BLOCK.RED);
+    }
+    // One-block hurdles require timed jumps; leave landing room before gaps.
+    for (const lane of [-10, 0, 10]) for (const z of [23, 31, 39])
+      kit.fill(lane - 2, 9, z, lane + 2, 9, z, BLOCK.RIBBON);
+    // Final stretch: alternate left/right openings, with no straight sprint line.
+    for (const z of [49, 52]) {
+      const left = z === 49;
+      kit.fill(left ? -18 : -5, 9, z, left ? 5 : 18, 12, z, BLOCK.RED);
     }
     for (const z of GIFT_RACE.checkpoints) {
       kit.fill(-17, 8, z - 2, 17, 8, z + 2, BLOCK.GOLD);

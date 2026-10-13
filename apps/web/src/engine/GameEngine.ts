@@ -1,3 +1,4 @@
+import { codeEpoch } from 'winterarc-gameplay';
 import { bindRenderResolution } from './RenderResolution';
 import { duelControls, duelPose } from './WallDuelInput';
 import { knockoutPower } from './KnockoutInput';
@@ -208,7 +209,7 @@ export class GameEngine {
         snapshot.mode !== 'knockout' && snapshot.mode !== 'wallduel',
       );
     else if (!active) this.preview();
-    this.players.sync(snapshot.mode === 'wallduel' ? [] : snapshot.players, snapshot.selfId, active);
+    this.players.sync(snapshot.mode === 'wallduel' ? [] : snapshot.players, snapshot.selfId, active, snapshot.mode === 'codehunt' && snapshot.phase === 'playing' && snapshot.codeView?.epoch === codeEpoch(snapshot.elapsed) ? snapshot.codeView : undefined);
     this.refreshInput();
     if (before?.phase !== snapshot.phase && snapshot.phase !== 'playing') this.setPaused(true);
   }

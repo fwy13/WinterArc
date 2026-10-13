@@ -1,3 +1,4 @@
+import { CodeHuntMode } from './CodeHuntMode.js';
 import type { GameId } from 'winterarc-core';
 import type { GameMode, ModeContext } from './GameMode.js';
 import { SnowHuntMode } from './SnowHuntMode.js';
@@ -9,6 +10,7 @@ import { ColorFallMode } from './ColorFallMode.js';
 import { GiftRaceMode } from './GiftRaceMode.js';
 export class GameRegistry {
   private static readonly factories: Record<GameId, (context: ModeContext) => GameMode> = {
+    codehunt: (c) => new CodeHuntMode(c),
     wallduel: (c) => new WallDuelMode(c),
     knockout: (c) => new KnockoutMode(c),
     hunt: (c) => new SnowHuntMode(c),

@@ -129,7 +129,7 @@ export class TournamentRoom extends Room<WinterState> {
         (value !== 'solo' && value !== 'squad')
       )
         return;
-      this.state.format = ['knockout', 'wallduel'].includes(this.state.mode) ? 'solo' : value;
+      this.state.format = ['knockout', 'wallduel', 'codehunt'].includes(this.state.mode) ? 'solo' : value;
       this.publishListing();
       for (const p of this.state.players.values()) p.ready = false;
     });
@@ -164,8 +164,13 @@ export class TournamentRoom extends Room<WinterState> {
     });
     this.onMessage('start', (client) => this.startMatch(client));
     this.onMessage('find', (client, message: unknown) => {
+      if (this.state.mode === 'codehunt') return;
       if (!this.validAction(client.sessionId, message, 'interact', 180)) return;
       this.controller?.interact?.(client.sessionId, (message as { target: unknown }).target);
+    });
+    this.onMessage('codeGuess', (client, message: unknown) => {
+      if (this.state.mode !== 'codehunt' || !this.validAction(client.sessionId, message, 'codeGuess', 1200)) return;
+      this.controller?.interact?.(client.sessionId, (message as { code?: unknown }).code);
     });
     this.onMessage('attack', (client, message: unknown) => {
       if (
@@ -197,7 +202,7 @@ export class TournamentRoom extends Room<WinterState> {
   }
   private drawMode(): GameId {
     const count = [...this.state.players.values()].filter(p => p.connected && !p.observer).length;
-    const enabled = accounts().enabledModes().filter(mode => mode !== 'wallduel' || count === 2);
+    const enabled = accounts().enabledModes().filter(mode => (mode !== 'wallduel' || count === 2) && (mode !== 'codehunt' || count >= 2));
     if (!enabled.length) return 'wallduel'; // startMatch reports the exact two-player requirement.
     const choices = enabled.filter(mode => mode !== this.lastPlayedMode);
     const modes = choices.length ? choices : enabled;
@@ -208,7 +213,7 @@ export class TournamentRoom extends Room<WinterState> {
   }
   private selectMode(mode: GameId): void {
     this.state.mode = mode;
-    if (mode === 'knockout' || mode === 'wallduel') this.state.format = 'solo';
+    if (mode === 'knockout' || mode === 'wallduel' || mode === 'codehunt') this.state.format = 'solo';
     // Retain these wire fields so existing snapshots and previews remain compatible.
     this.state.stages.clear();
     this.state.stages.push(mode);
@@ -354,6 +359,7 @@ export class TournamentRoom extends Room<WinterState> {
       return;
     }
     const nextMode = this.state.modeSelection === 'random' ? this.drawMode() : this.state.modeSelection;
+    if (nextMode === 'codehunt' && connected.length < 2) { client.send('notice', '@codehunt.minimum'); return; }
     if (nextMode === 'wallduel' && connected.length !== 2) { client.send('notice', '@duel.exactTwo'); return; }
     if (!accounts().enabledModes().includes(nextMode)) { client.send('notice', '@account.error.MODE_DISABLED'); return; }
     if (this.state.tournamentId) {
@@ -459,6 +465,8 @@ export class TournamentRoom extends Room<WinterState> {
           playerId,
         }),
       shot: (event) => this.broadcast('shot', event),
+      privateCodes: (id, data) => this.clients.find(c => c.sessionId === id)?.send('codeView', data),
+      notice: (id, text) => this.clients.find(c => c.sessionId === id)?.send('notice', text),
       privateDuel: (id, data) => this.clients.find(c => c.sessionId === id)?.send('duelPrivate', data),
       found: (id, score) => this.clients.find((c) => c.sessionId === id)?.send('found', { score }),
     };

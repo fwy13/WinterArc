@@ -77,7 +77,13 @@ export interface ShotEvent {
   playerId: string;
 }
 export interface DuelPrivate { round: number; turn: number; x: number; pose: number }
+export interface CodeView {
+  round: number;
+  epoch: number;
+  visible: { id: string; code: string }[];
+}
 export interface Snapshot {
+  codeView?: CodeView;
   duel: { hunterId: string; hiderId: string; stage: string; turn: number; ammo: number; remaining: number; yaw: number; pitch: number; charge: number; self?: DuelPrivate };
   modeSelection: ModeSelection;
   tournamentId: string;

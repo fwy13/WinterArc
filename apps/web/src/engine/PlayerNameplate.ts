@@ -65,8 +65,17 @@ export class PlayerNameplate {
     context.textBaseline = 'middle';
     context.fillStyle = premium ? '#ffd45c' : '#ecfdf5';
     const badge = club && this.badge;
-    context.fillText(premium ? `★ ${name}` : name, badge ? 288 : 256, 48, badge ? 408 : 480);
-    if (badge) { context.fillStyle = '#07314c'; context.fillRect(8,16,64,64); context.drawImage(badge,12,20,56,56); }
+    const label = premium ? `★ ${name}` : name;
+    const badgeSize = 32, gap = badge ? 10 : 0;
+    const textWidth = Math.min(context.measureText(label).width, badge ? 438 : 480);
+    const left = (512 - textWidth - (badge ? badgeSize + gap : 0)) / 2;
+    context.textAlign = 'left';
+    context.fillText(label, left, 48, textWidth);
+    if (badge) {
+      const x = left + textWidth + gap;
+      context.fillStyle = '#07314c'; context.fillRect(x, 32, badgeSize, badgeSize);
+      context.drawImage(badge, x + 3, 35, 26, 26);
+    }
     this.texture.update();
   }
 
