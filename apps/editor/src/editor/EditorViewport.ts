@@ -1,6 +1,6 @@
 import { AuroraSky } from 'winterarc-rendering';
 import type { SkyQuality } from 'winterarc-core';
-import { shapeQuads, appendShapeQuad } from 'winterarc-rendering';
+import { meshChunkBinaryGreedy } from 'winterarc-rendering';
 import { Engine } from '@babylonjs/core/Engines/engine.js';
 import { Scene } from '@babylonjs/core/scene.js';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera.js';
@@ -17,7 +17,7 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture.js';
 import '@babylonjs/core/Culling/ray.js';
-import { MAP_HALF, MAP_HEIGHT, PALETTE, VoxelWorld, blockShape, traceBlockShape } from 'winterarc-world';
+import { MAP_HALF, PALETTE, VoxelWorld, traceBlockShape } from 'winterarc-world';
 import { EYE_HEIGHT, STEP, collides, movePlayer } from 'winterarc-gameplay';
 import { type Motion } from 'winterarc-core';
 import { TreeModels } from 'winterarc-rendering';
@@ -25,15 +25,6 @@ import { BLOCK_TEXTURES } from 'winterarc-rendering';
 import type { EditorDocument, Cell } from './EditorDocument';
 
 const CHUNK = 16;
-const faces = [
-  { n: [1, 0, 0], v: [[1,0,0],[1,1,0],[1,1,1],[1,0,1]] },
-  { n: [-1,0,0], v: [[0,0,1],[0,1,1],[0,1,0],[0,0,0]] },
-  { n: [0,1,0], v: [[0,1,1],[1,1,1],[1,1,0],[0,1,0]] },
-  { n: [0,-1,0], v: [[0,0,0],[1,0,0],[1,0,1],[0,0,1]] },
-  { n: [0,0,1], v: [[1,0,1],[1,1,1],[0,1,1],[0,0,1]] },
-  { n: [0,0,-1], v: [[0,0,0],[0,1,0],[1,1,0],[1,0,0]] },
-];
-type Geometry = { positions: number[]; normals: number[]; indices: number[]; uvs: number[] };
 export type ViewMode = 'orbit' | 'fly' | 'play';
 
 /** Standalone Babylon viewport; shares textures, tree models and game movement code. */
@@ -107,8 +98,13 @@ export class EditorViewport {
     if (!m) {
       m = this.solid(key, file ? '#ffffff' : PALETTE[id][1]);
       // Keep palette color on missing textures; model geometry remains editable.
-      if (file) m.diffuseTexture = new Texture(`/textures/${file}.png`, this.scene, false, false, Texture.NEAREST_SAMPLINGMODE,
-        undefined, () => { m!.diffuseTexture = null; m!.diffuseColor = Color3.FromHexString(PALETTE[id][1]); });
+      if (file) {
+        const tex = new Texture(`/textures/${file}.png`, this.scene, false, false, Texture.NEAREST_SAMPLINGMODE,
+          undefined, () => { m!.diffuseTexture = null; m!.diffuseColor = Color3.FromHexString(PALETTE[id][1]); });
+        tex.wrapU = Texture.WRAP_ADDRESSMODE;
+        tex.wrapV = Texture.WRAP_ADDRESSMODE;
+        m.diffuseTexture = tex;
+      }
       if (id === 10) m.emissiveColor = Color3.FromHexString('#80683c');
     }
     return m;
@@ -134,37 +130,20 @@ export class EditorViewport {
   private rebuild(key: string): void {
     const world = this.model!.world, [cx, cz] = key.split(':').map(Number);
     for (const mesh of this.meshes.get(key) ?? []) mesh.dispose();
-    const groups = new Map<StandardMaterial, Geometry>();
-    for (let x = cx; x < cx + CHUNK; x++) for (let z = cz; z < cz + CHUNK; z++) for (let y = 0; y < MAP_HEIGHT; y++) {
-      const id = world.get(x, y, z); if (!id) continue;
-      if (!blockShape(id).fullCube) {
-        for (const q of shapeQuads(id)) {
-          const [nx,ny,nz] = q.normal;
-          if (q.boundary && blockShape(world.get(x+nx,y+ny,z+nz)).fullCube) continue;
-          const material = this.material(q.material, 0);
-          let g = groups.get(material);
-          if (!g) { g = { positions: [], normals: [], indices: [], uvs: [] }; groups.set(material,g); }
-          appendShapeQuad(g,q,x,y,z);
-        }
-        continue;
-      }
-      faces.forEach((face, f) => {
-        const [nx, ny, nz] = face.n;
-        if (blockShape(world.get(x + nx, y + ny, z + nz)).fullCube) return;
-        const material = this.material(id, f);
-        let g = groups.get(material);
-        if (!g) { g = { positions: [], normals: [], indices: [], uvs: [] }; groups.set(material, g); }
-        const offset = g.positions.length / 3;
-        for (const [vx, vy, vz] of face.v) { g.positions.push(x + vx, y + vy, z + vz); g.normals.push(nx, ny, nz); }
-        g.indices.push(offset, offset + 1, offset + 2, offset, offset + 2, offset + 3);
-        g.uvs.push(0,0,0,1,1,1,1,0);
-      });
-    }
+    const buckets = meshChunkBinaryGreedy(world, cx, cz);
     const list: Mesh[] = [];
-    for (const [material, data] of groups) {
-      const mesh = new Mesh(`chunk-${key}`, this.scene);
-      const vertex = new VertexData(); Object.assign(vertex, data); vertex.applyToMesh(mesh);
-      mesh.material = material; mesh.freezeWorldMatrix(); list.push(mesh);
+    for (const b of buckets.values()) {
+      if (!b.indices.length) continue;
+      const mesh = new Mesh(`chunk-${key}-${b.blockId}-${b.face}`, this.scene);
+      const vertex = new VertexData();
+      vertex.positions = b.positions;
+      vertex.normals = b.normals;
+      vertex.uvs = b.uvs;
+      vertex.indices = b.indices;
+      vertex.applyToMesh(mesh);
+      mesh.material = this.material(b.blockId, b.face);
+      mesh.freezeWorldMatrix();
+      list.push(mesh);
     }
     this.meshes.set(key, list);
   }
@@ -269,7 +248,7 @@ export class EditorViewport {
   };
   private render = () => {
     const now = performance.now(), dt = Math.min((now - this.last) / 1000, 0.1); this.last = now;
-    const end = performance.now() + 5;
+    const end = performance.now() + 8;
     while (this.dirty.size && performance.now() < end) { const key = this.dirty.values().next().value!; this.dirty.delete(key); this.rebuild(key); }
     if (document.pointerLockElement === this.canvas && this.mode !== 'orbit') {
       const forward = Number(this.keys.has('KeyW')) - Number(this.keys.has('KeyS'));

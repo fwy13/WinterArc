@@ -40,11 +40,11 @@ export default function ResultPanel({ state: s, onstart, onleave, onready, onMod
   if (ranked) {
     if (won) badges.push({ icon: '♛', title: vi ? 'Ngôi sao trận đấu' : 'Match star', detail: vi ? 'Thắng trận này' : 'Won this match' });
     else if (me.rank <= 3) badges.push({ icon: '◆', title: vi ? 'Bục vinh danh' : 'Podium finish', detail: vi ? 'Kết thúc trong top 3' : 'Finished in the top 3' });
-    if (['hunt', 'giftrace'].includes(s.resultMode) && me.deaths === 0)
+    if (['hunt', 'giftrace', 'frosty', 'avalanche'].includes(s.resultMode) && me.deaths === 0)
       badges.push({ icon: '✦', title: vi ? 'Bước chân vững vàng' : 'Sure-footed', detail: vi ? 'Không ngã lần nào' : 'No falls this match' });
     if (['hunt', 'crab'].includes(s.resultMode) && me.score > 0 && me.score === Math.max(...results.map(p => p.score)))
       badges.push({ icon: 'ϟ', title: s.resultMode === 'hunt' ? (vi ? 'Thợ săn tuyết' : 'Snow seeker') : (vi ? 'Khắc tinh cua' : 'Crab challenger'), detail: vi ? 'Điểm cao nhất trận (kể cả đồng hạng)' : 'Highest match score (including ties)' });
-    if (['knockout', 'icebreak', 'colorfall'].includes(s.resultMode) && won)
+    if (['knockout', 'icebreak', 'colorfall', 'boomgift', 'meltdown'].includes(s.resultMode) && won)
       badges.push({ icon: '❄', title: vi ? 'Trụ vững đến cuối' : 'Last one standing', detail: vi ? 'Có mặt trong nhóm chiến thắng' : 'Among the match winners' });
   }
   return <div className="result-screen">

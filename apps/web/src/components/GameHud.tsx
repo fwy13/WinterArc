@@ -24,6 +24,9 @@ export function HudLayout({ state: s, candidate = false, touch = false, onCodeGu
   const goal = Math.max(0, s.goal);
   const bossHp = Math.max(0, Math.min(s.boss.hp, s.boss.maxHp));
   const urgent = s.mode === 'colorfall' ? !s.floor.dropped && s.floor.remaining <= 3
+    : s.mode === 'boomgift' ? me?.launchPower === 1 || s.floor.remaining <= 4
+    : s.mode === 'frosty' ? s.knockout.stage !== 'green'
+    : s.mode === 'avalanche' ? (me ? me.z - s.ice.radius < 14 : false)
     : s.mode === 'crab' ? ['slam', 'leap', 'shockwave'].includes(s.boss.action)
     : (s.mode === 'icebreak' || s.mode === 'knockout') && s.ice.shrinkIn > 0 && s.ice.shrinkIn <= 3;
   if (s.mode === 'wallduel') return <WallDuelHud state={s} touch={touch} />;
@@ -64,15 +67,40 @@ export function HudLayout({ state: s, candidate = false, touch = false, onCodeGu
         <div className="hud-boss-meta"><span>{t('ingame.radius')}</span><strong>{Math.max(0, s.ice.radius).toFixed(1)} m</strong></div>
         <p className="hud-description">{t('ingame.icebreak.hint')}</p>
       </>}
+      {s.mode === 'boomgift' && <>
+        <div className="hud-objective-value"><strong>{Math.max(0, Math.ceil(s.floor.remaining))}<small>s</small></strong><span>{t('floor.cycle', { count: s.floor.cycle })}</span></div>
+        <p className="hud-description">{t(me?.launchPower === 1 ? 'ingame.boomgift.carrier' : 'ingame.boomgift.hint')}</p>
+      </>}
+      {s.mode === 'meltdown' && <>
+        <div className="hud-objective-value"><strong>{me?.checkpoint || 4}<small> / 4</small></strong><span>{t('ingame.meltdown.layer')}</span></div>
+        <div className="hud-boss-meta"><span>{t('hud.alive')}: {alive}/{s.entrants}</span><span>{t('common.score')}: {me?.score ?? 0}</span></div>
+        <p className="hud-description">{t('ingame.meltdown.hint')}</p>
+      </>}
+      {s.mode === 'frosty' && <>
+        <div className="hud-objective-value"><strong>{Math.max(0, Math.ceil(s.knockout.remaining))}<small>s</small></strong><span>{t(`ingame.frosty.${s.knockout.stage === 'red' ? 'red' : s.knockout.stage === 'warn' ? 'warn' : 'green'}`)}</span></div>
+        <progress className="hud-meter" aria-label={t('ingame.frosty.label')} value={Math.min(progress, goal)} max={goal || 1} />
+        <p className="hud-description">{t('ingame.frosty.hint')}</p>
+      </>}
+      {s.mode === 'snowfort' && <>
+        <div className="hud-boss-title"><strong>{t('ingame.snowfort.core')}</strong><span>{bossHp}<small> / {s.boss.maxHp}</small></span></div>
+        <progress className="hud-meter hud-meter--boss" aria-label={t('ingame.snowfort.core')} value={bossHp} max={s.boss.maxHp || 1} />
+        <div className="hud-boss-meta"><span>{t(me?.checkpoint === 0 ? 'ingame.snowfort.south' : 'ingame.snowfort.north')}</span><span>{t('common.score')}: {me?.score ?? 0}</span></div>
+        <p className="hud-description">{t('ingame.snowfort.hint')}</p>
+      </>}
+      {s.mode === 'avalanche' && <>
+        <div className="hud-objective-value"><strong>{Math.max(0, Math.round((me?.z ?? -70) - s.ice.radius))}<small>m</small></strong><span>{t('ingame.avalanche.gap')}</span></div>
+        <progress className="hud-meter" aria-label={t('ingame.avalanche.label')} value={Math.min(progress, goal)} max={goal || 1} />
+        <p className="hud-description">{t('ingame.avalanche.hint')}</p>
+      </>}
       {active && (!touch || urgent || s.mode === 'giftrace' && progress >= goal) && <ModeHint state={s} />}
     </section>}
 
     {playing && active && <>
       {s.mode !== 'knockout' && <span className={`hud-reticle ${candidate ? 'is-ready' : ''}`} />}
-      {candidate && (s.mode === 'hunt' || s.mode === 'giftrace') && <div className="hud-interact hud-surface" role="status">
+      {candidate && ['hunt', 'giftrace', 'frosty', 'avalanche'].includes(s.mode) && <div className="hud-interact hud-surface" role="status">
         <kbd>{touch ? '◎' : 'E'}</kbd><span>{t(s.mode === 'hunt' ? 'ingame.find' : 'ingame.deliver')}</span>
       </div>}
-      {!touch && s.mode !== 'knockout' && <div className="hud-controls"><span><kbd>W A S D</kbd>{t('mobile.move')}</span><span><kbd>SPACE</kbd>{t('mobile.jump')}</span><span><kbd>{s.mode === 'crab' || s.mode === 'icebreak' ? 'F' : 'SHIFT'}</kbd>{t(s.mode === 'crab' || s.mode === 'icebreak' ? 'mobile.attack' : 'ingame.sprint')}</span><span><kbd>ESC</kbd>{t('ingame.pause')}</span></div>}
+      {!touch && s.mode !== 'knockout' && <div className="hud-controls"><span><kbd>W A S D</kbd>{t('mobile.move')}</span><span><kbd>SPACE</kbd>{t('mobile.jump')}</span><span><kbd>{['crab', 'icebreak', 'boomgift', 'meltdown', 'frosty', 'snowfort', 'avalanche'].includes(s.mode) ? 'F' : 'SHIFT'}</kbd>{t(['crab', 'icebreak', 'boomgift', 'meltdown', 'frosty', 'snowfort', 'avalanche'].includes(s.mode) ? 'mobile.attack' : 'ingame.sprint')}</span><span><kbd>ESC</kbd>{t('ingame.pause')}</span></div>}
     </>}
     {playing && me && !active && <div className="hud-result-tag hud-surface" role="status"><HudIcon name={me.qualified ? 'check' : 'players'} /><div><strong>{t(me.observer ? 'account.spectating' : me.out ? 'cup.eliminated' : me.qualified ? 'cup.qualified' : 'account.spectating')}</strong><span>{t('cup.watch')}</span></div></div>}
   </div>;

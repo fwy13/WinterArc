@@ -1,4 +1,4 @@
-export type GameId = 'codehunt' | 'hunt' | 'colorfall' | 'giftrace' | 'crab' | 'icebreak' | 'knockout' | 'wallduel';
+export type GameId = 'codehunt' | 'hunt' | 'colorfall' | 'giftrace' | 'crab' | 'icebreak' | 'knockout' | 'wallduel' | 'boomgift' | 'meltdown' | 'frosty' | 'snowfort' | 'avalanche';
 export type MatchFormat = 'solo' | 'squad';
 export type Phase = 'lobby' | 'countdown' | 'playing' | 'intermission' | 'finished';
 export type Vec3 = [number, number, number];

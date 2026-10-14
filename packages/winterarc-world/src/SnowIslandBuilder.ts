@@ -1,7 +1,7 @@
 import { iceSpire, pennantGate } from './WinterLandmarks.js';
 import { MapKit } from './MapKit.js';
 import { BLOCK, VoxelWorld, type MapBuilder } from './VoxelWorld.js';
-/** Flat arena at sea level, a natural coastline and decorative outlying icebergs. */
+/** Flat arena at sea level, destructible ice/gift bastions, a natural coastline and outlying icebergs. */
 export class SnowIslandBuilder implements MapBuilder {
   build(): VoxelWorld {
     const w = new VoxelWorld('crab', {
@@ -29,7 +29,34 @@ export class SnowIslandBuilder implements MapBuilder {
           kit.block(x, h + 1, z, BLOCK.SNOW);
         }
       }
-    // Four Christmas shrines around the arena, outside the main combat routes.
+
+    // 4 Destructible Gift & Timber Bastions at r = 13 (inside the r = 20 spawn ring) for players to climb or take cover behind.
+    for (const [bx, bz, color] of [
+      [-13, 0, BLOCK.RED],
+      [13, 0, BLOCK.GREEN],
+      [0, -13, BLOCK.GREEN],
+      [0, 13, BLOCK.RED],
+    ] as const) {
+      kit.fill(bx - 1, 3, bz - 1, bx + 1, 4, bz + 1, color);
+      kit.fill(bx - 1, 5, bz - 1, bx + 1, 5, bz + 1, BLOCK.RIBBON);
+      kit.block(bx, 6, bz, BLOCK.GOLD);
+      // Step-up slabs around each bastion so players can climb onto the roof to dodge shockwaves.
+      kit.fill(bx - 1, 3, bz - 2, bx + 1, 3, bz - 2, BLOCK.WOOD_SLAB);
+      kit.fill(bx - 1, 4, bz - 1, bx + 1, 4, bz - 1, BLOCK.WOOD_STAIRS_PZ);
+    }
+
+    // 4 Destructible Ice Crystal Watchtowers at diagonal positions (r ≈ 15.5).
+    for (const sx of [-11, 11]) {
+      for (const sz of [-11, 11]) {
+        kit.fill(sx - 1, 3, sz - 1, sx + 1, 3, sz + 1, BLOCK.STONE);
+        kit.fill(sx, 4, sz, sx, 6, sz, BLOCK.ICE);
+        kit.block(sx, 7, sz, BLOCK.GLOW);
+        kit.block(sx + Math.sign(sx), 3, sz, BLOCK.WOOD_SLAB);
+        kit.block(sx, 3, sz + Math.sign(sz), BLOCK.WOOD_SLAB);
+      }
+    }
+
+    // Four Christmas shrines around the outer arena.
     for (const [x, z] of [
       [-23, -11],
       [23, -11],

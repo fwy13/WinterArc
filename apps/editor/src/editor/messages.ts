@@ -16,11 +16,11 @@ export const editorVi = {
   loseY: 'Độ cao bị loại', overlay: 'Vùng đỏ bị khóa. Mode này chỉ cho thêm lớp trang trí; marker gameplay giữ theo map nền.',
   selectHint: 'Click 2 block để chọn A/B hoặc nhập tọa độ. Các thao tác vùng chỉ áp dụng khi bấm nút.',
   mobile: 'Editor tối ưu cho máy tính có chuột và bàn phím. Trên mobile có thể quan sát và chỉnh qua tọa độ.',
-  tooLarge: 'Mỗi thao tác tối đa 65.536 ô; hãy chia vùng nhỏ hơn.', locked: 'Vùng chọn vượt giới hạn hoặc chạm đấu trường bị khóa.',
+  tooLarge: 'Mỗi thao tác tối đa 262.144 ô; hãy chia vùng nhỏ hơn.', locked: 'Vùng chọn vượt giới hạn hoặc chạm đấu trường bị khóa.',
   emptyClipboard: 'Hãy sao chép một vùng trước.', overlayMarkers: 'Mode này không cho sửa marker gameplay.',
   unsupportedFile: 'Chỉ mở JSON tối đa 32 MB. File TypeScript dùng để đưa vào source.',
   error: 'Không thực hiện được', position: 'Vị trí', loading: 'Đang mở editor…',
-  history: 'Undo tối đa 60 thao tác / 300.000 ô thay đổi.',
+  history: 'Undo tối đa 120 thao tác / 1.000.000 ô thay đổi.',
 } as const;
 export type EditorMessage = keyof typeof editorVi;
 export const editorEn: Record<EditorMessage, string> = {
@@ -41,9 +41,9 @@ export const editorEn: Record<EditorMessage, string> = {
   loseY: 'Elimination height', overlay: 'Red arena is locked. This mode supports decoration overlays only; gameplay markers use the base map.',
   selectHint: 'Click two blocks to select A/B or enter coordinates. Region operations only run when you press their buttons.',
   mobile: 'The editor is optimized for mouse and keyboard. Mobile supports viewing and coordinate editing.',
-  tooLarge: 'Maximum 65,536 cells per operation. Split the selection.', locked: 'Selection is outside map bounds or overlaps the reserved arena.',
+  tooLarge: 'Maximum 262,144 cells per operation. Split the selection.', locked: 'Selection is outside map bounds or overlaps the reserved arena.',
   emptyClipboard: 'Copy a region first.', overlayMarkers: 'Gameplay markers are locked for this mode.',
   unsupportedFile: 'Open JSON files up to 32 MB. TypeScript exports are for source integration.',
   error: 'Action failed', position: 'Position', loading: 'Opening editor…',
-  history: 'Undo retains up to 60 actions / 300,000 changed cells.',
+  history: 'Undo retains up to 120 actions / 1,000,000 changed cells.',
 };

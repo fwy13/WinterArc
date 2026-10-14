@@ -43,6 +43,7 @@ export class ColorFallMode implements GameMode {
     const key = `${floor.cycle}:${floor.safeBlock}:${floor.dropped}`;
     if (key === this.geometryKey) return;
     this.geometryKey = key;
+    const touched: { x: number; y: number; z: number }[] = [];
     updateColorFloor(
       this.context.map.world,
       floor.cycle,
@@ -51,9 +52,10 @@ export class ColorFallMode implements GameMode {
       (x, y, z, block) => {
         if (this.context.map.world.get(x, y, z) === block) return;
         this.context.map.world.set(x, y, z, block);
-        this.context.noa.setBlock(block, x, y, z);
+        touched.push({ x, y, z });
       },
     );
+    this.context.map.updateChunks(touched);
   }
   render(): void {
     const f = this.snapshot?.floor;

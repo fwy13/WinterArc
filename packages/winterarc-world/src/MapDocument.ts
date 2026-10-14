@@ -29,7 +29,7 @@ export function isReservedMapCell(mode: GameId, x: number, z: number, margin = 0
 export function validateMapDocument(doc: MapDocument, options: { draft?: boolean } = {}): void {
   if (!doc || typeof doc !== 'object') throw new Error('Invalid map document');
   if (typeof doc.name !== 'string' || doc.name.length > 120) throw new Error('Invalid map name');
-  if (![1, 2].includes(doc.version) || !['hunt', 'giftrace', 'crab', 'icebreak', 'knockout', 'colorfall'].includes(doc.mode))
+  if (![1, 2].includes(doc.version) || !['hunt', 'giftrace', 'crab', 'icebreak', 'knockout', 'colorfall', 'boomgift', 'meltdown', 'frosty', 'snowfort', 'avalanche'].includes(doc.mode))
     throw new Error('Unsupported map mode/version');
   if (!['replace', 'overlay'].includes(doc.placement)) throw new Error('Invalid placement');
   if (doc.placement === 'replace' && !['hunt', 'giftrace'].includes(doc.mode))
@@ -71,7 +71,7 @@ export function validateMapDocument(doc: MapDocument, options: { draft?: boolean
   }
   for (const key of ['trees', 'lamps', 'obstacles'] as const) {
     const list = doc[key];
-    if (list !== undefined && (doc.version !== 2 || !Array.isArray(list) || list.length > 2048))
+    if (list !== undefined && (doc.version !== 2 || !Array.isArray(list) || list.length > 4096))
       throw new Error(`Invalid decoration list: ${key}`);
   }
   const position = (x: number, y: number, z: number, margin = 0) => {

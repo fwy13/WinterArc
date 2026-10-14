@@ -5,11 +5,22 @@ import '@babylonjs/core/Meshes/thinInstanceMesh.js';
 import { randomFromSeed } from 'winterarc-world';
 import type { ShotEvent } from 'winterarc-protocol';
 import { MeshFactory } from './MeshFactory.js';
+
+interface DebrisPiece {
+  mesh: Mesh;
+  vx: number;
+  vy: number;
+  vz: number;
+  age: number;
+}
+
 export class EffectsManager {
   private flakes: { x: number; y: number; z: number; s: number }[] = [];
   private matrices = new Float32Array(200 * 16);
   private snow: Mesh;
   private shots: { mesh: Mesh; event: ShotEvent; age: number }[] = [];
+  private debrisList: DebrisPiece[] = [];
+
   constructor(private readonly meshes: MeshFactory) {
     this.snow = CreateBox('snowfall', { size: 0.065 }, meshes.scene);
     this.snow.material = meshes.material('#f1fafb', 0.5);
@@ -29,6 +40,7 @@ export class EffectsManager {
     }
     this.snow.thinInstanceSetBuffer('matrix', this.matrices, 16, false);
   }
+
   shot(event: ShotEvent): void {
     const mesh = CreateSphere('snowball', { diameter: 0.23, segments: 6 }, this.meshes.scene);
     mesh.material = this.meshes.material(event.hit ? '#d3fcff' : '#f4f6ef', 0.8);
@@ -38,6 +50,28 @@ export class EffectsManager {
     this.shots.push({ mesh, event, age: 0 });
     if (this.shots.length > 100) this.shots.shift()?.mesh.dispose();
   }
+
+  /** Spawns tumbling voxel debris chunks when Boss Crab smashes structures or floor tiles. */
+  burstDebris(x: number, y: number, z: number, color = '#78becb', count = 3): void {
+    for (let i = 0; i < count; i++) {
+      const mesh = CreateBox('voxel-debris', { size: 0.28 }, this.meshes.scene);
+      mesh.material = this.meshes.material(color, 0.2);
+      mesh.isPickable = false;
+      this.meshes.noa.rendering.addMeshToScene(mesh);
+      mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
+      const angle = ((i + Math.random() * 0.6) * Math.PI * 2) / count;
+      const speed = 2.4 + Math.random() * 3.2;
+      this.debrisList.push({
+        mesh,
+        vx: Math.cos(angle) * speed,
+        vy: 4.5 + Math.random() * 3.8,
+        vz: Math.sin(angle) * speed,
+        age: 0,
+      });
+      if (this.debrisList.length > 96) this.debrisList.shift()?.mesh.dispose();
+    }
+  }
+
   render(dt: number, time: number): void {
     const p = this.meshes.noa.ents.getPosition(this.meshes.noa.playerEntity);
     for (let i = 0; i < this.flakes.length; i++) {
@@ -62,11 +96,29 @@ export class EffectsManager {
         this.shots.splice(i, 1);
       }
     }
+    for (let i = this.debrisList.length - 1; i >= 0; i--) {
+      const d = this.debrisList[i];
+      d.age += dt;
+      d.vy -= 18 * dt;
+      d.mesh.position.x += d.vx * dt;
+      d.mesh.position.y += d.vy * dt;
+      d.mesh.position.z += d.vz * dt;
+      d.mesh.rotation.x += 6 * dt;
+      d.mesh.rotation.y += 5 * dt;
+      if (d.age > 0.65) {
+        d.mesh.dispose();
+        this.debrisList.splice(i, 1);
+      }
+    }
   }
+
   clear(): void {
     for (const s of this.shots) s.mesh.dispose();
     this.shots = [];
+    for (const d of this.debrisList) d.mesh.dispose();
+    this.debrisList = [];
   }
+
   dispose(): void {
     this.clear();
     this.snow.dispose();

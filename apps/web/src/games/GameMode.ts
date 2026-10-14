@@ -1,4 +1,4 @@
-import type { Engine } from 'noa-engine';
+import type { Engine } from '../engine/WinterVoxelEngine.js';
 import type { Motion, GameId } from 'winterarc-core';
 import type { Snapshot, ShotEvent } from 'winterarc-protocol';
 import type { MeshFactory } from '../engine/MeshFactory.js';

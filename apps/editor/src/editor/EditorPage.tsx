@@ -34,7 +34,7 @@ function getBlockName(id: number, locale: string): string {
   return PALETTE[id][0];
 }
 
-const modes: GameId[] = ['hunt', 'giftrace', 'crab', 'icebreak', 'knockout', 'colorfall'];
+const modes: GameId[] = ['hunt', 'giftrace', 'crab', 'icebreak', 'knockout', 'colorfall', 'boomgift', 'meltdown', 'frosty', 'snowfort', 'avalanche'];
 const kinds: MarkerKind[] = ['spawn', 'target', 'checkpoint', 'finish', 'tree', 'lamp', 'obstacle'];
 type Tool = 'block' | 'erase' | 'select' | 'marker';
 

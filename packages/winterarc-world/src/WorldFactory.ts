@@ -9,6 +9,13 @@ import { KnockoutBuilder } from './KnockoutBuilder.js';
 import { IceBreakBuilder } from './IceBreakBuilder.js';
 import { ColorFallBuilder } from './ColorFallBuilder.js';
 import { GiftRaceBuilder } from './GiftRaceBuilder.js';
+import {
+  AvalancheBuilder,
+  BoomGiftBuilder,
+  FrostyBuilder,
+  MeltdownBuilder,
+  SnowfortBuilder,
+} from './BonusGamesBuilder.js';
 import type { VoxelWorld } from './VoxelWorld.js';
 export class WorldFactory {
   private static readonly builders: Record<GameId, () => VoxelWorld> = {
@@ -20,6 +27,11 @@ export class WorldFactory {
     giftrace: () => new GiftRaceBuilder().build(),
     crab: () => new SnowIslandBuilder().build(),
     icebreak: () => new IceBreakBuilder().build(),
+    boomgift: () => new BoomGiftBuilder().build(),
+    meltdown: () => new MeltdownBuilder().build(),
+    frosty: () => new FrostyBuilder().build(),
+    snowfort: () => new SnowfortBuilder().build(),
+    avalanche: () => new AvalancheBuilder().build(),
   };
   private static readonly cache = new Map<GameId, VoxelWorld>();
   /** Unmodified procedural base, used for deterministic editor overlays. */

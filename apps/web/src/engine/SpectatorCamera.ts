@@ -1,4 +1,4 @@
-import type { Engine } from 'noa-engine';
+import type { Engine } from './WinterVoxelEngine';
 import type { Snapshot } from 'winterarc-protocol';
 
 /** Never moves the authoritative player: only the local noa camera carrier. */

@@ -2,7 +2,7 @@ import { duelControls, selectDuelPose } from './WallDuelInput';
 import { knockoutControls, knockoutPower, adjustKnockoutPower } from './KnockoutInput';
 import { settings } from '../config/settings';
 import { touchInput, clearTouchInput } from './TouchInput';
-import type { Engine } from 'noa-engine';
+import type { Engine } from './WinterVoxelEngine';
 import type { InputCommand } from 'winterarc-protocol';
 export class InputManager {
   private keys = new Set<string>();

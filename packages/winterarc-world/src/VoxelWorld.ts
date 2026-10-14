@@ -99,8 +99,14 @@ export class VoxelWorld {
   customSpawns: Position[] = [];
   loseY = 0.2;
   race = {
-    checkpoints: [-40, -12, 16, 44].map(z => ({ x: 0, y: 9, z, radius: 17 })),
-    finish: { x: 0, y: 9, z: 57, radius: 4 },
+    checkpoints: [
+      { x: 0, y: 10, z: -34, radius: 12 },
+      { x: 0, y: 10, z: -9, radius: 12 },
+      { x: 0, y: 13, z: 18, radius: 12 },
+      { x: 0, y: 13, z: 45, radius: 12 },
+      { x: 0, y: 13, z: 58, radius: 12 },
+    ],
+    finish: { x: 0, y: 15, z: 70, radius: 4 },
   };
   readonly size = MAP_HALF * 2;
   readonly data = new Uint8Array(this.size * this.size * MAP_HEIGHT);

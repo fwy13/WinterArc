@@ -1,4 +1,4 @@
-import type { Engine } from 'noa-engine';
+import type { Engine } from './WinterVoxelEngine';
 import { CreateBox } from '@babylonjs/core/Meshes/Builders/boxBuilder.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
 import { Color3 } from '@babylonjs/core/Maths/math.color.js';

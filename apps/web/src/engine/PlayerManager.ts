@@ -6,7 +6,7 @@ import { PROFILE_ROLES, type ProfileRole } from 'winterarc-profile';
 import { t } from '../i18n';
 import { PlayerNameplate } from './PlayerNameplate';
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
-import type { Engine } from 'noa-engine';
+import type { Engine } from './WinterVoxelEngine';
 import type { InputCommand, PlayerSnapshot } from 'winterarc-protocol';
 import type { Motion } from 'winterarc-core';
 import { collides, movePlayer, STEP } from 'winterarc-gameplay';

@@ -124,10 +124,10 @@ export default function MobileControls({ mode, candidate, duelHunter = false }: 
         className="pointer-events-auto absolute left-0 bottom-0 top-[calc(max(0.5rem,env(safe-area-inset-top))+3rem)] w-1/2 touch-none"
       />
       <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] flex items-end gap-2">
-        {(mode === 'crab' || mode === 'icebreak') && (
+        {['crab', 'icebreak', 'boomgift', 'meltdown', 'frosty', 'snowfort', 'avalanche'].includes(mode) && (
           <HoldButton action="attack" label={t('mobile.attack')} />
         )}
-        {(mode === 'hunt' || mode === 'giftrace') && (
+        {['hunt', 'giftrace', 'frosty', 'avalanche'].includes(mode) && (
           <button
             type="button"
             disabled={!candidate}

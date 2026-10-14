@@ -1,3 +1,4 @@
+import { PALETTE } from 'winterarc-world';
 import { t } from '../i18n';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { CreateCylinder } from '@babylonjs/core/Meshes/Builders/cylinderBuilder.js';
@@ -47,6 +48,7 @@ export class CrabRaidMode implements GameMode {
   private shockwave: Mesh;
   private lastImpact = 0;
   private impactTime = 0;
+  private seenBroken = new Set<string>();
   constructor(private readonly context: ModeContext) {
     this.root = new TransformNode('boss-controller', context.meshes.scene);
     this.root.position.set(0, 3, 0);
@@ -99,6 +101,23 @@ export class CrabRaidMode implements GameMode {
     }
   }
   sync(snapshot: Snapshot | null): void {
+    const broken = snapshot?.brokenIce ?? [];
+    if (!broken.length) this.seenBroken.clear();
+    let burstBudget = 14;
+    for (const entry of broken) {
+      if (this.seenBroken.has(entry)) continue;
+      this.seenBroken.add(entry);
+      if (burstBudget > 0) {
+        const [x, y, z] = entry.split(':').map(Number);
+        const oldId = this.context.map.world.get(x, y, z);
+        const color = PALETTE[oldId]?.[1] ?? '#78becb';
+        if (y >= 2) {
+          this.context.effects.burstDebris(x, y, z, color, 2);
+          burstBudget--;
+        }
+      }
+    }
+    this.context.map.applyBrokenIce(broken);
     if (snapshot && snapshot.boss.maxHp > 0) this.boss = snapshot.boss;
     else
       this.boss = {
@@ -115,6 +134,10 @@ export class CrabRaidMode implements GameMode {
         shockRadius: 0,
         impactSerial: 0,
       };
+    if (this.context.map.world.obstacles[0]) {
+      this.context.map.world.obstacles[0].x = this.boss.x;
+      this.context.map.world.obstacles[0].z = this.boss.z;
+    }
     const keep = new Set<string>();
     for (const z of snapshot?.zones || []) {
       keep.add(z.id);
@@ -124,6 +147,7 @@ export class CrabRaidMode implements GameMode {
         this.zones.set(z.id, item);
       }
       item.zone = z;
+      item.root.position.set(z.x, 3.035, z.z);
     }
     for (const [id, z] of this.zones)
       if (!keep.has(id)) {

@@ -72,7 +72,7 @@ export class EditorDocument {
   }
 
   edit(rows: Row[], changeMeta?: (meta: Metadata) => void): void {
-    if (rows.length > 65536) throw new Error('editor.tooLarge');
+    if (rows.length > 262144) throw new Error('editor.tooLarge');
     const before = clone(this.meta), after = clone(this.meta);
     changeMeta?.(after);
     validateMapDocument({ ...after, blocks: [] }, { draft: true });
@@ -90,7 +90,7 @@ export class EditorDocument {
     if (!cells.length && JSON.stringify(before) === JSON.stringify(after)) return;
     const change = { cells, before, after };
     this.undoStack.push(change); this.redoStack = []; this.historyCells += cells.length;
-    while (this.undoStack.length > 60 || this.historyCells > 300000) this.historyCells -= this.undoStack.shift()!.cells.length;
+    while (this.undoStack.length > 120 || this.historyCells > 1000000) this.historyCells -= this.undoStack.shift()!.cells.length;
     this.apply(change, true);
   }
 
@@ -109,7 +109,7 @@ export class EditorDocument {
     this.undoStack.push(change); this.historyCells += change.cells.length; this.apply(change, true);
   }
   region(a: Cell, b: Cell, visit: (x: number, y: number, z: number) => void): void {
-    if (![...a, ...b].every(Number.isInteger) || volume(a, b) > 65536) throw new Error('editor.tooLarge');
+    if (![...a, ...b].every(Number.isInteger) || volume(a, b) > 262144) throw new Error('editor.tooLarge');
     for (let x = Math.min(a[0], b[0]); x <= Math.max(a[0], b[0]); x++)
       for (let y = Math.min(a[1], b[1]); y <= Math.max(a[1], b[1]); y++)
         for (let z = Math.min(a[2], b[2]); z <= Math.max(a[2], b[2]); z++) visit(x, y, z);

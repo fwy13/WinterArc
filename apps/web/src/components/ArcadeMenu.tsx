@@ -16,6 +16,11 @@ export const gameIcons: Record<GameId, string> = {
   knockout: '☃',
   codehunt: '🔢',
   wallduel: '◎',
+  boomgift: '💣',
+  meltdown: '🧊',
+  frosty: '⛄',
+  snowfort: '🏰',
+  avalanche: '🏔️',
 };
 interface Props {
   randomMode: boolean;

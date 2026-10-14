@@ -1,5 +1,5 @@
 import type { GameSettings } from '../config/settings';
-import type { Engine } from 'noa-engine';
+import type { Engine } from './WinterVoxelEngine';
 import type { FreeCamera } from '@babylonjs/core/Cameras/freeCamera.js';
 import { EYE_HEIGHT } from 'winterarc-gameplay';
 

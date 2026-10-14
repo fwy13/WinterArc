@@ -7,7 +7,7 @@ import { SpectatorCamera } from './SpectatorCamera';
 import type { SpectatorOptions } from '../components/SpectatorControls';
 import { settings, type GameSettings } from '../config/settings';
 import { renderFps } from './RenderStats';
-import { Engine } from 'noa-engine';
+import { Engine } from './WinterVoxelEngine';
 import { Color3 } from '@babylonjs/core/Maths/math.color.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight.js';
@@ -15,7 +15,6 @@ import { Scene } from '@babylonjs/core/scene.js';
 import { type GameId } from 'winterarc-core';
 import { type InputCommand, type Snapshot, type ShotEvent, type SoundEvent } from 'winterarc-protocol';
 import { MeshFactory } from './MeshFactory.js';
-import { TextureManager } from './TextureManager.js';
 import { MapManager } from './MapManager.js';
 import { PlayerManager } from './PlayerManager.js';
 import { hasTouchControls } from './TouchInput';
@@ -85,11 +84,11 @@ export class GameEngine {
       skipDefaultHighlighting: true,
       originRebaseDistance: 1000000,
       chunkSize: 24,
-      chunkAddDistance: [4, 2],
-      chunkRemoveDistance: [5, 3],
+      chunkAddDistance: [6, 3],
+      chunkRemoveDistance: [7, 4],
       worldGenWhilePaused: true,
       tickRate: 30,
-      maxRenderRate: 60,
+      maxRenderRate: 120,
       antiAlias: true,
       clearColor: [0.105, 0.19, 0.25],
       ambientColor: [0.64, 0.75, 0.79],
@@ -114,13 +113,12 @@ export class GameEngine {
     const scene = noa.rendering.getScene();
     this.sky = new AuroraSky(scene, settings.get().skyQuality, mesh => noa.rendering.addMeshToScene(mesh, false));
     scene.fogMode = Scene.FOGMODE_LINEAR;
-    scene.fogStart = 48;
-    scene.fogEnd = 113;
+    scene.fogStart = 64;
+    scene.fogEnd = 140;
     scene.fogColor = new Color3(0.105, 0.19, 0.25);
     const fill = new HemisphericLight('winter-fill', new Vector3(0, 1, 0), scene);
     fill.intensity = 0.7;
     fill.groundColor = new Color3(0.19, 0.3, 0.35);
-    new TextureManager().register(noa);
     const meshes = new MeshFactory(noa);
     this.map = new MapManager(noa, meshes);
 
@@ -283,7 +281,7 @@ export class GameEngine {
   shot(event: ShotEvent): void {
     this.mode.onShot(event);
     this.audio.play(this.mode.id === 'wallduel' ? 'sniper' : 'throw', event.from, event.playerId);
-    if (event.hit) this.audio.play(this.mode.id === 'icebreak' ? 'break' : 'hit', event.to, event.playerId);
+    if (event.hit) this.audio.play(['icebreak', 'meltdown', 'snowfort'].includes(this.mode.id) ? 'break' : 'hit', event.to, event.playerId);
   }
   private tick = (): void => {
     if (!this.initialized && this.map.chunks > 14) {
@@ -306,7 +304,7 @@ export class GameEngine {
     const me = this.snapshot.players.find((p) => p.id === this.snapshot?.selfId);
     if (!(this.mode.id === 'codehunt' && this.snapshot.codeHunt.stage === 'break') && this.mode.id !== 'knockout' && this.mode.id !== 'wallduel' && me && me.hp > 0 && !me.out && !me.qualified) this.players.predict(cmd, this.map.world);
     if (
-      (this.mode.id === 'crab' || this.mode.id === 'icebreak') &&
+      ['crab', 'icebreak', 'boomgift', 'meltdown', 'frosty', 'snowfort', 'avalanche'].includes(this.mode.id) &&
       this.input.attacking &&
       performance.now() - this.attackAt >=
         (this.mode.id === 'crab' ? 440 : 360)

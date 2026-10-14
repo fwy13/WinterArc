@@ -11,3 +11,4 @@ export * from './src/BlockShapes.js';
 export * from './src/ShapeRay.js';
 
 export * from './src/KnockoutBuilder.js';
+export * from './src/BonusGamesBuilder.js';

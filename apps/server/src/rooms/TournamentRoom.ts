@@ -536,7 +536,7 @@ export class TournamentRoom extends Room<WinterState> {
         this.state.mode === 'crab' && reason !== 'boss-defeated'
           ? []
           : eligible
-              .filter(([, p]) => !['hunt', 'giftrace'].includes(this.state.mode) || p.qualified)
+              .filter(([, p]) => !['hunt', 'giftrace', 'frosty', 'avalanche'].includes(this.state.mode) || p.qualified)
               .map(([id]) => id);
     if (this.state.mode === 'crab' && reason !== 'boss-defeated') passing = [];
     if (this.state.mode === 'codehunt') {
