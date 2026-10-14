@@ -1,4 +1,4 @@
-import { iceSpire, pennantGate } from './WinterLandmarks.js';
+import { pennantGate } from './WinterLandmarks.js';
 import { MapKit } from './MapKit.js';
 import { BLOCK, VoxelWorld, type MapBuilder } from './VoxelWorld.js';
 

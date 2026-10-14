@@ -1,6 +1,5 @@
 import { canReachPoint, EYE_HEIGHT } from 'winterarc-gameplay';
 import {
-  AVALANCHE_FINISH,
   BLOCK,
   FROSTY_FINISH_Z,
   MELTDOWN_LAYERS,
